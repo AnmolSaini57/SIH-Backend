@@ -6,7 +6,6 @@ import {
   submitAssessment,
   getCommunities,
   joinCommunity,
-  getAppointments,
   bookAppointment,
   getCollegeCounsellorsWithAvailability,
   getMyAppointments,
@@ -57,12 +56,6 @@ router.get('/communities',
 router.post('/communities/:community_id/join', 
   validateUUID('community_id'), 
   joinCommunity
-);
-
-// Appointment management
-router.get('/appointments', 
-  validatePagination, 
-  getAppointments
 );
 
 router.post('/appointments', 

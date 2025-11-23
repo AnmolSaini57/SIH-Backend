@@ -33,9 +33,7 @@ export const getProfile = async (req, res) => {
         updated_at,
         colleges (
           id,
-          name,
-          code,
-          address
+          name
         )
       `)
       .eq('id', req.user.user_id)
@@ -49,7 +47,7 @@ export const getProfile = async (req, res) => {
 
     return successResponse(res, data, 'Profile retrieved successfully');
   } catch (error) {
-    console.error('❌ Get student profile error:', error);
+    console.error('Get student profile error:', error);
     return errorResponse(res, 'Failed to get profile', 500);
   }
 };
@@ -82,7 +80,7 @@ export const updateProfile = async (req, res) => {
 
     return successResponse(res, data, 'Profile updated successfully');
   } catch (error) {
-    console.error('❌ Update student profile error:', error);
+    console.error('Update student profile error:', error);
     return errorResponse(res, 'Failed to update profile', 500);
   }
 };
@@ -126,7 +124,7 @@ export const getAssessments = async (req, res) => {
 
     return paginatedResponse(res, data, page, limit, count);
   } catch (error) {
-    console.error('❌ Get student assessments error:', error);
+    console.error('Get student assessments error:', error);
     return errorResponse(res, 'Failed to get assessments', 500);
   }
 };
@@ -194,7 +192,7 @@ export const submitAssessment = async (req, res) => {
     }, 'Assessment submitted successfully', 201);
 
   } catch (error) {
-    console.error('❌ Submit assessment error:', error);
+    console.error('Submit assessment error:', error);
     return errorResponse(res, 'Failed to submit assessment', 500);
   }
 };
@@ -304,62 +302,13 @@ export const joinCommunity = async (req, res) => {
   }
 };
 
-/**
- * Get student's appointments
- */
-export const getAppointments = async (req, res) => {
-  try {
-    const { page = 1, limit = 20, status } = req.query;
-    const offset = (page - 1) * limit;
-
-    let query = supabase
-      .from('appointments')
-      .select(`
-        id,
-        date,
-        time,
-        status,
-        type,
-        notes,
-        feedback,
-        created_at,
-        counsellor:counsellor_id (
-          id,
-          name,
-          email,
-          phone
-        )
-      `, { count: 'exact' })
-      .eq('student_id', req.user.user_id)
-      .eq('college_id', req.tenant);
-
-    if (status) {
-      query = query.eq('status', status);
-    }
-
-    const { data, error, count } = await query
-      .order('date', { ascending: true })
-      .order('time', { ascending: true })
-      .range(offset, offset + limit - 1);
-
-    if (error) {
-      const formattedError = formatSupabaseError(error);
-      return errorResponse(res, formattedError.message, 400);
-    }
-
-    return paginatedResponse(res, data, page, limit, count);
-  } catch (error) {
-    console.error('❌ Get student appointments error:', error);
-    return errorResponse(res, 'Failed to get appointments', 500);
-  }
-};
 
 /**
  * Book an appointment
  */
 export const bookAppointment = async (req, res) => {
   try {
-    const { counsellor_id, date, time, type, notes } = req.body;
+    const { counsellor_id, date, start_time, notes } = req.body;
 
     // Verify counsellor exists and belongs to same college
     const { data: counsellor, error: counsellorError } = await supabase
@@ -380,7 +329,7 @@ export const bookAppointment = async (req, res) => {
       .select('id')
       .eq('counsellor_id', counsellor_id)
       .eq('date', date)
-      .eq('time', time)
+      .eq('start_time', start_time)
       .in('status', ['pending', 'confirmed'])
       .single();
 
@@ -396,8 +345,7 @@ export const bookAppointment = async (req, res) => {
         counsellor_id,
         college_id: req.tenant,
         date,
-        time,
-        type,
+        start_time,
         notes,
         status: 'pending',
         created_at: new Date().toISOString()
@@ -405,9 +353,8 @@ export const bookAppointment = async (req, res) => {
       .select(`
         id,
         date,
-        time,
+        start_time,
         status,
-        type,
         notes,
         created_at,
         counsellor:counsellor_id (

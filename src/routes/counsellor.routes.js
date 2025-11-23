@@ -2,13 +2,6 @@ import express from 'express';
 import {
   getProfile,
   updateProfile,
-  getStudents,
-  getStudentDetails,
-  getAppointments,
-  updateAppointment,
-  addSessionNote,
-  getSessionNotes,
-  getResources,
   getDashboardStats,
   getAppointmentRequests,
   acceptAppointmentRequest,
@@ -48,23 +41,6 @@ router.put('/profile',
 // Dashboard
 router.get('/dashboard/stats', getDashboardStats);
 
-// Student management
-router.get('/students', 
-  validatePagination, 
-  getStudents
-);
-
-router.get('/students/:student_id', 
-  validateUUID('student_id'), 
-  getStudentDetails
-);
-
-// Appointment management
-router.get('/appointments', 
-  validatePagination, 
-  getAppointments
-);
-
 router.get('/appointment-requests', getAppointmentRequests);
 
 router.put('/appointment-requests/:appointment_id/accept',
@@ -75,35 +51,6 @@ router.put('/appointment-requests/:appointment_id/accept',
 router.put('/appointment-requests/:appointment_id/decline',
   validateUUID('appointment_id'),
   declineAppointmentRequest
-);
-
-router.put('/appointments/:appointment_id', 
-  validateUUID('appointment_id'),
-  validate(appointmentSchemas.updateAppointment), 
-  updateAppointment
-);
-
-// Session notes
-router.post('/session-notes', 
-  validate(Joi.object({
-    student_id: Joi.string().uuid().required(),
-    content: Joi.string().min(10).max(5000).required(),
-    session_date: Joi.date().iso().optional(),
-    appointment_id: Joi.string().uuid().optional()
-  })), 
-  addSessionNote
-);
-
-router.get('/session-notes/:student_id', 
-  validateUUID('student_id'),
-  validatePagination, 
-  getSessionNotes
-);
-
-// Resources
-router.get('/resources', 
-  validatePagination, 
-  getResources
 );
 
 // Availability management
