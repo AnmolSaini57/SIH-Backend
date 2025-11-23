@@ -9,14 +9,23 @@ import {
   addSessionNote,
   getSessionNotes,
   getResources,
-  getDashboardStats
+  getDashboardStats,
+  getAppointmentRequests,
+  acceptAppointmentRequest,
+  declineAppointmentRequest,
+  addAvailability,
+  getSessions,
+  getSessionsSummary,
+  updateSessionNotesAndGoals
 } from '../controllers/counsellor.controller.js';
 import { 
   validate, 
   validatePagination,
   validateUUID,
   userSchemas,
-  appointmentSchemas
+  appointmentSchemas,
+  availabilitySchemas,
+  sessionSchemas
 } from '../utils/validators.js';
 import Joi from 'joi';
 
@@ -56,6 +65,18 @@ router.get('/appointments',
   getAppointments
 );
 
+router.get('/appointment-requests', getAppointmentRequests);
+
+router.put('/appointment-requests/:appointment_id/accept',
+  validateUUID('appointment_id'),
+  acceptAppointmentRequest
+);
+
+router.put('/appointment-requests/:appointment_id/decline',
+  validateUUID('appointment_id'),
+  declineAppointmentRequest
+);
+
 router.put('/appointments/:appointment_id', 
   validateUUID('appointment_id'),
   validate(appointmentSchemas.updateAppointment), 
@@ -83,6 +104,24 @@ router.get('/session-notes/:student_id',
 router.get('/resources', 
   validatePagination, 
   getResources
+);
+
+// Availability management
+router.post('/manage-availability',
+  validate(availabilitySchemas.addAvailability),
+  addAvailability
+);
+
+// Sessions (all appointments for counsellor)
+router.get('/sessions', getSessions);
+
+// Sessions summary (completed appointments with notes and goals)
+router.get('/sessions-summary', getSessionsSummary);
+
+router.put('/sessions-summary/:appointment_id',
+  validateUUID('appointment_id'),
+  validate(sessionSchemas.updateSessionNotesAndGoals),
+  updateSessionNotesAndGoals
 );
 
 export default router;

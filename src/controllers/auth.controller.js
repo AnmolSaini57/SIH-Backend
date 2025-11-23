@@ -248,17 +248,14 @@ export const getMe = async (req, res) => {
         updated_at,
         colleges (
           id,
-          name,
-          code,
-          address,
-          phone
+          name
         )
       `)
       .eq('id', userId)
       .single();
 
     if (error) {
-      console.error('❌ Get profile error:', error);
+      console.error('Get profile error:', error);
       const formattedError = formatSupabaseError(error);
       return errorResponse(res, formattedError.message, 404);
     }

@@ -37,9 +37,7 @@ export const getProfile = async (req, res) => {
         updated_at,
         colleges (
           id,
-          name,
-          code,
-          address
+          name
         )
       `)
       .eq('id', req.user.user_id)
@@ -53,7 +51,7 @@ export const getProfile = async (req, res) => {
 
     return successResponse(res, data, 'Profile retrieved successfully');
   } catch (error) {
-    console.error('❌ Get counsellor profile error:', error);
+    console.error('Get counsellor profile error:', error);
     return errorResponse(res, 'Failed to get profile', 500);
   }
 };
@@ -86,7 +84,7 @@ export const updateProfile = async (req, res) => {
 
     return successResponse(res, data, 'Profile updated successfully');
   } catch (error) {
-    console.error('❌ Update counsellor profile error:', error);
+    console.error('Update counsellor profile error:', error);
     return errorResponse(res, 'Failed to update profile', 500);
   }
 };
@@ -142,7 +140,7 @@ export const getStudents = async (req, res) => {
 
     return paginatedResponse(res, data, page, limit, count);
   } catch (error) {
-    console.error('❌ Get counsellor students error:', error);
+    console.error('Get counsellor students error:', error);
     return errorResponse(res, 'Failed to get students', 500);
   }
 };
@@ -552,5 +550,383 @@ export const getDashboardStats = async (req, res) => {
   } catch (error) {
     console.error('❌ Get counsellor dashboard stats error:', error);
     return errorResponse(res, 'Failed to get dashboard stats', 500);
+  }
+};
+
+/**
+ * Get appointment requests (pending appointments) for the counsellor
+ * Route: GET /api/counsellor/appointment-requests
+ * Returns: pending appointments with date, time, student name, student_intent
+ */
+export const getAppointmentRequests = async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('appointments')
+      .select(`
+        id,
+        date,
+        start_time,
+        time,
+        student_intent,
+        notes,
+        created_at,
+        student:student_id (
+          id,
+          name,
+          email,
+          avatar_url
+        )
+      `)
+      .eq('counsellor_id', req.user.user_id)
+      .eq('college_id', req.tenant)
+      .eq('status', 'pending')
+      .order('date', { ascending: true })
+      .order('start_time', { ascending: true });
+
+    if (error) {
+      const formattedError = formatSupabaseError(error);
+      return errorResponse(res, formattedError.message, 400);
+    }
+
+    const requests = (data || []).map(appt => ({
+      id: appt.id,
+      date: appt.date,
+      time: appt.start_time || appt.time,
+      student: {
+        id: appt.student?.id,
+        name: appt.student?.name,
+        email: appt.student?.email,
+        avatar_url: appt.student?.avatar_url
+      },
+      student_intent: appt.student_intent || appt.notes || null,
+      created_at: appt.created_at
+    }));
+
+    return successResponse(res, requests, 'Appointment requests retrieved successfully');
+  } catch (error) {
+    console.error('❌ Get appointment requests error:', error);
+    return errorResponse(res, 'Failed to get appointment requests', 500);
+  }
+};
+
+/**
+ * Accept an appointment request
+ * Route: PUT /api/counsellor/appointment-requests/:appointment_id/accept
+ * Updates status from 'pending' to 'confirmed'
+ */
+export const acceptAppointmentRequest = async (req, res) => {
+  try {
+    const { appointment_id } = req.params;
+
+    const { data, error } = await supabase
+      .from('appointments')
+      .update({ 
+        status: 'confirmed',
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', appointment_id)
+      .eq('counsellor_id', req.user.user_id)
+      .eq('college_id', req.tenant)
+      .eq('status', 'pending') // Only accept if currently pending
+      .select(`
+        id,
+        date,
+        start_time,
+        time,
+        status,
+        student:student_id (
+          name,
+          email
+        )
+      `)
+      .single();
+
+    if (error) {
+      const formattedError = formatSupabaseError(error);
+      return errorResponse(res, formattedError.message, 400);
+    }
+
+    if (!data) {
+      return notFoundResponse(res, 'Appointment request');
+    }
+
+    return successResponse(res, data, 'Appointment request accepted successfully');
+  } catch (error) {
+    console.error('❌ Accept appointment request error:', error);
+    return errorResponse(res, 'Failed to accept appointment request', 500);
+  }
+};
+
+/**
+ * Decline an appointment request
+ * Route: PUT /api/counsellor/appointment-requests/:appointment_id/decline
+ * Updates status from 'pending' to 'cancelled'
+ */
+export const declineAppointmentRequest = async (req, res) => {
+  try {
+    const { appointment_id } = req.params;
+
+    const { data, error } = await supabase
+      .from('appointments')
+      .update({ 
+        status: 'cancelled',
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', appointment_id)
+      .eq('counsellor_id', req.user.user_id)
+      .eq('college_id', req.tenant)
+      .eq('status', 'pending') // Only decline if currently pending
+      .select(`
+        id,
+        date,
+        start_time,
+        time,
+        status,
+        student:student_id (
+          name,
+          email
+        )
+      `)
+      .single();
+
+    if (error) {
+      const formattedError = formatSupabaseError(error);
+      return errorResponse(res, formattedError.message, 400);
+    }
+
+    if (!data) {
+      return notFoundResponse(res, 'Appointment request');
+    }
+
+    return successResponse(res, data, 'Appointment request declined successfully');
+  } catch (error) {
+    console.error('❌ Decline appointment request error:', error);
+    return errorResponse(res, 'Failed to decline appointment request', 500);
+  }
+};
+
+/**
+ * Add availability slot for counsellor
+ * Route: POST /api/counsellor/manage-availability
+ * Body: { date, start_time }
+ */
+export const addAvailability = async (req, res) => {
+  try {
+    const { date, start_time } = req.body;
+
+    // Check if this slot already exists
+    const { data: existing } = await supabase
+      .from('counsellor_availability')
+      .select('id')
+      .eq('counsellor_id', req.user.user_id)
+      .eq('college_id', req.tenant)
+      .eq('date', date)
+      .eq('start_time', start_time)
+      .single();
+
+    if (existing) {
+      return errorResponse(res, 'Availability slot already exists for this date and time', 409);
+    }
+
+    const { data, error } = await supabase
+      .from('counsellor_availability')
+      .insert({
+        counsellor_id: req.user.user_id,
+        college_id: req.tenant,
+        date,
+        start_time,
+        is_active: true,
+        created_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (error) {
+      const formattedError = formatSupabaseError(error);
+      return errorResponse(res, formattedError.message, 400);
+    }
+
+    return successResponse(res, data, 'Availability added successfully', 201);
+  } catch (error) {
+    console.error('❌ Add availability error:', error);
+    return errorResponse(res, 'Failed to add availability', 500);
+  }
+};
+
+/**
+ * Get all sessions (appointments) for the counsellor
+ * Route: GET /api/counsellor/sessions
+ * Optional query: status filter
+ * Returns: id, date, time, status, student name, purpose
+ */
+export const getSessions = async (req, res) => {
+  try {
+    const { status } = req.query;
+
+    let query = supabase
+      .from('appointments')
+      .select(`
+        id,
+        date,
+        start_time,
+        time,
+        status,
+        notes,
+        student_intent,
+        student:student_id (
+          id,
+          name,
+          email,
+          avatar_url
+        )
+      `)
+      .eq('counsellor_id', req.user.user_id)
+      .eq('college_id', req.tenant);
+
+    if (status) {
+      query = query.eq('status', status);
+    }
+
+    const { data, error } = await query
+      .order('date', { ascending: false })
+      .order('start_time', { ascending: false });
+
+    if (error) {
+      const formattedError = formatSupabaseError(error);
+      return errorResponse(res, formattedError.message, 400);
+    }
+
+    const sessions = (data || []).map(session => ({
+      id: session.id,
+      date: session.date,
+      time: session.start_time || session.time,
+      status: session.status,
+      student: {
+        id: session.student?.id,
+        name: session.student?.name,
+        email: session.student?.email,
+        avatar_url: session.student?.avatar_url
+      },
+      purpose: session.student_intent || session.notes || null
+    }));
+
+    return successResponse(res, sessions, 'Sessions retrieved successfully');
+  } catch (error) {
+    console.error('❌ Get sessions error:', error);
+    return errorResponse(res, 'Failed to get sessions', 500);
+  }
+};
+
+/**
+ * Get sessions summary for the counsellor (completed appointments only)
+ * Route: GET /api/counsellor/sessions-summary
+ * Returns: date, time, student name, session_notes, session_goals
+ */
+export const getSessionsSummary = async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('appointments')
+      .select(`
+        id,
+        date,
+        start_time,
+        time,
+        notes,
+        session_goals,
+        student:student_id (
+          id,
+          name,
+          email,
+          avatar_url
+        )
+      `)
+      .eq('counsellor_id', req.user.user_id)
+      .eq('college_id', req.tenant)
+      .eq('status', 'completed')
+      .order('date', { ascending: false })
+      .order('start_time', { ascending: false });
+
+    if (error) {
+      const formattedError = formatSupabaseError(error);
+      return errorResponse(res, formattedError.message, 400);
+    }
+
+    const summary = (data || []).map(session => ({
+      id: session.id,
+      date: session.date,
+      time: session.start_time || session.time,
+      student: {
+        id: session.student?.id,
+        name: session.student?.name,
+        email: session.student?.email,
+        avatar_url: session.student?.avatar_url
+      },
+      session_notes: session.notes || null,
+      session_goals: session.session_goals || []
+    }));
+
+    return successResponse(res, summary, 'Sessions summary retrieved successfully');
+  } catch (error) {
+    console.error('❌ Get sessions summary error:', error);
+    return errorResponse(res, 'Failed to get sessions summary', 500);
+  }
+};
+
+/**
+ * Update session notes and goals for a specific appointment
+ * Route: PUT /api/counsellor/sessions-summary/:appointment_id
+ * Body: { notes, session_goals }
+ */
+export const updateSessionNotesAndGoals = async (req, res) => {
+  try {
+    const { appointment_id } = req.params;
+    const { notes, session_goals } = req.body;
+
+    const updates = {
+      updated_at: new Date().toISOString()
+    };
+
+    if (notes !== undefined) {
+      updates.notes = notes;
+    }
+
+    if (session_goals !== undefined) {
+      updates.session_goals = session_goals;
+    }
+
+    const { data, error } = await supabase
+      .from('appointments')
+      .update(updates)
+      .eq('id', appointment_id)
+      .eq('counsellor_id', req.user.user_id)
+      .eq('college_id', req.tenant)
+      .select(`
+        id,
+        date,
+        start_time,
+        time,
+        status,
+        notes,
+        session_goals,
+        student:student_id (
+          name,
+          email
+        )
+      `)
+      .single();
+
+    if (error) {
+      const formattedError = formatSupabaseError(error);
+      return errorResponse(res, formattedError.message, 400);
+    }
+
+    if (!data) {
+      return notFoundResponse(res, 'Appointment');
+    }
+
+    return successResponse(res, data, 'Session notes and goals updated successfully');
+  } catch (error) {
+    console.error('❌ Update session notes and goals error:', error);
+    return errorResponse(res, 'Failed to update session notes and goals', 500);
   }
 };

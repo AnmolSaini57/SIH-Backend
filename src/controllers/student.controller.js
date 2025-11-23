@@ -429,6 +429,237 @@ export const bookAppointment = async (req, res) => {
   }
 };
 
+/**
+ * Get all counsellors of the student's college with availability for a given date
+ * Query param: date=YYYY-MM-DD (required)
+ * Optional: specialization filter later (not implemented now)
+ */
+export const getCollegeCounsellorsWithAvailability = async (req, res) => {
+  try {
+    const { date } = req.query;
+    if (!date) {
+      return errorResponse(res, 'date query parameter is required (YYYY-MM-DD)', 400);
+    }
+
+    // Get all counsellors in this college
+    const { data: counsellors, error: counsellorsError } = await supabase
+      .from('profiles')
+      .select(`
+        id,
+        name,
+        email,
+        avatar_url,
+        bio,
+        phone,
+        counsellors (
+          specialization
+        )
+      `)
+      .eq('role', 'counsellor')
+      .eq('college_id', req.tenant);
+
+    if (counsellorsError) {
+      const formattedError = formatSupabaseError(counsellorsError);
+      return errorResponse(res, formattedError.message, 400);
+    }
+
+    if (!counsellors || counsellors.length === 0) {
+      return successResponse(res, [], 'No counsellors found for this college');
+    }
+
+    const counsellorIds = counsellors.map(c => c.id);
+
+    // Fetch availability rows for the specified date
+    const { data: availability, error: availabilityError } = await supabase
+      .from('counsellor_availability')
+      .select('id, counsellor_id, start_time')
+      .eq('date', date)
+      .eq('college_id', req.tenant)
+      .eq('is_active', true)
+      .in('counsellor_id', counsellorIds);
+
+    if (availabilityError) {
+      const formattedError = formatSupabaseError(availabilityError);
+      return errorResponse(res, formattedError.message, 400);
+    }
+
+    // Fetch booked appointments (pending or confirmed) to exclude those slots
+    const { data: booked, error: bookedError } = await supabase
+      .from('appointments')
+      .select('counsellor_id, start_time')
+      .eq('date', date)
+      .eq('college_id', req.tenant)
+      .in('status', ['pending', 'confirmed'])
+      .in('counsellor_id', counsellorIds);
+
+    if (bookedError) {
+      const formattedError = formatSupabaseError(bookedError);
+      return errorResponse(res, formattedError.message, 400);
+    }
+
+    const bookedMap = new Set(
+      (booked || []).map(b => `${b.counsellor_id}|${b.start_time}`)
+    );
+
+    // Group availability by counsellor and filter out booked times
+    const availabilityByCounsellor = {};
+    (availability || []).forEach(slot => {
+      const key = slot.counsellor_id;
+      if (!availabilityByCounsellor[key]) availabilityByCounsellor[key] = [];
+      const composite = `${slot.counsellor_id}|${slot.start_time}`;
+      if (!bookedMap.has(composite)) {
+        availabilityByCounsellor[key].push({
+          availability_id: slot.id,
+          start_time: slot.start_time
+        });
+      }
+    });
+
+    // Build final response array
+    const result = counsellors.map(c => ({
+      id: c.id,
+      name: c.name,
+      email: c.email,
+      avatar_url: c.avatar_url,
+      bio: c.bio,
+      phone: c.phone,
+      specialization: c.counsellors?.specialization || null,
+      date,
+      available_slots: availabilityByCounsellor[c.id] || []
+    }));
+
+    return successResponse(res, result, 'Counsellors with availability retrieved successfully');
+  } catch (error) {
+    console.error('❌ Get college counsellors availability error:', error);
+    return errorResponse(res, 'Failed to get counsellors availability', 500);
+  }
+};
+
+/**
+ * Get all appointments for the logged-in student (no pagination)
+ * Route: GET /api/student/my-appointments
+ * Optional query: status=pending|confirmed|completed|cancelled
+ * Returns: id, student_id, date, time/start_time, status, counsellor name, specialization, purpose
+ */
+export const getMyAppointments = async (req, res) => {
+  try {
+    const { status } = req.query;
+
+    let query = supabase
+      .from('appointments')
+      .select(`
+        id,
+        student_id,
+        date,
+        start_time,
+        time,
+        status,
+        notes,
+        student_intent,
+        counsellor:counsellor_id (
+          id,
+          name,
+          email,
+          counsellors (
+            specialization
+          )
+        )
+      `)
+      .eq('student_id', req.user.user_id)
+      .eq('college_id', req.tenant);
+
+    if (status) {
+      query = query.eq('status', status);
+    }
+
+    const { data, error } = await query
+      .order('date', { ascending: true })
+      .order('start_time', { ascending: true });
+
+    if (error) {
+      const formattedError = formatSupabaseError(error);
+      return errorResponse(res, formattedError.message, 400);
+    }
+
+    const mapped = (data || []).map(appt => ({
+      id: appt.id,
+      student_id: appt.student_id,
+      date: appt.date,
+      time: appt.start_time || appt.time, // support both column names
+      status: appt.status,
+      counsellor: {
+        id: appt.counsellor?.id,
+        name: appt.counsellor?.name,
+        email: appt.counsellor?.email,
+        specialization: appt.counsellor?.counsellors?.specialization || null
+      },
+      purpose: appt.student_intent || appt.notes || null
+    }));
+
+    return successResponse(res, mapped, 'Student appointments retrieved successfully');
+  } catch (error) {
+    console.error('Get my appointments error:', error);
+    return errorResponse(res, 'Failed to get appointments', 500);
+  }
+};
+
+/**
+ * Get sessions summary for the logged-in student (completed appointments only)
+ * Route: GET /api/student/sessions-summary
+ * Returns: date, time, counsellor name, specialization, session_notes, session_goals
+ */
+export const getSessionsSummary = async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('appointments')
+      .select(`
+        id,
+        date,
+        start_time,
+        time,
+        notes,
+        session_goals,
+        counsellor:counsellor_id (
+          id,
+          name,
+          email,
+          counsellors (
+            specialization
+          )
+        )
+      `)
+      .eq('student_id', req.user.user_id)
+      .eq('college_id', req.tenant)
+      .eq('status', 'completed')
+      .order('date', { ascending: false })
+      .order('start_time', { ascending: false });
+
+    if (error) {
+      const formattedError = formatSupabaseError(error);
+      return errorResponse(res, formattedError.message, 400);
+    }
+
+    const sessions = (data || []).map(session => ({
+      id: session.id,
+      date: session.date,
+      time: session.start_time || session.time,
+      counsellor: {
+        id: session.counsellor?.id,
+        name: session.counsellor?.name,
+        email: session.counsellor?.email,
+        specialization: session.counsellor?.counsellors?.specialization || null
+      },
+      session_notes: session.notes || null,
+      session_goals: session.session_goals || []
+    }));
+
+    return successResponse(res, sessions, 'Sessions summary retrieved successfully');
+  } catch (error) {
+    console.error('❌ Get sessions summary error:', error);
+    return errorResponse(res, 'Failed to get sessions summary', 500);
+  }
+};
+
 // Helper functions
 function calculateAssessmentScore(questions, responses) {
   let totalScore = 0;

@@ -127,8 +127,7 @@ export const getUsers = async (req, res) => {
         avatar_url,
         phone,
         created_at,
-        updated_at,
-        last_login_at
+        updated_at
       `, { count: 'exact' })
       .eq('college_id', req.tenant);
 
@@ -175,7 +174,6 @@ export const getUserDetails = async (req, res) => {
         bio,
         created_at,
         updated_at,
-        last_login_at,
         assessment_submissions (
           id,
           score,
@@ -205,7 +203,7 @@ export const getUserDetails = async (req, res) => {
 
     return successResponse(res, data, 'User details retrieved successfully');
   } catch (error) {
-    console.error('❌ Get user details error:', error);
+    console.error('Get user details error:', error);
     return errorResponse(res, 'Failed to get user details', 500);
   }
 };

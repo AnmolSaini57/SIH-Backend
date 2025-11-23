@@ -7,7 +7,10 @@ import {
   getCommunities,
   joinCommunity,
   getAppointments,
-  bookAppointment
+  bookAppointment,
+  getCollegeCounsellorsWithAvailability,
+  getMyAppointments,
+  getSessionsSummary
 } from '../controllers/student.controller.js';
 import { 
   validate, 
@@ -66,5 +69,14 @@ router.post('/appointments',
   validate(appointmentSchemas.createAppointment), 
   bookAppointment
 );
+
+// Counsellors with availability for a given date
+router.get('/college-counsellors', getCollegeCounsellorsWithAvailability);
+
+// All appointments for the logged in student (no pagination)
+router.get('/my-appointments', getMyAppointments);
+
+// Completed sessions summary with session notes and goals
+router.get('/sessions-summary', getSessionsSummary);
 
 export default router;

@@ -156,6 +156,32 @@ export const appointmentSchemas = {
   })
 };
 
+// Availability schemas
+export const availabilitySchemas = {
+  addAvailability: Joi.object({
+    date: Joi.date().iso().min('now').required().messages({
+      'date.min': 'Date must be today or in the future'
+    }),
+    start_time: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).required().messages({
+      'string.pattern.base': 'Time must be in HH:MM format'
+    })
+  })
+};
+
+// Session schemas
+export const sessionSchemas = {
+  updateSessionNotesAndGoals: Joi.object({
+    notes: Joi.string().max(2000).optional().allow(null),
+    session_goals: Joi.array().items(
+      Joi.object({
+        goal: Joi.string().max(200).required(),
+        completed: Joi.boolean().optional(),
+        notes: Joi.string().max(500).optional()
+      })
+    ).optional().allow(null)
+  })
+};
+
 // Admin schemas
 export const adminSchemas = {
   createAnnouncement: Joi.object({
@@ -250,6 +276,8 @@ export default {
   assessmentSchemas,
   communitySchemas,
   appointmentSchemas,
+  availabilitySchemas,
+  sessionSchemas,
   adminSchemas,
   validate,
   validatePagination,
