@@ -263,7 +263,7 @@ export const getMe = async (req, res) => {
     return successResponse(res, profile, 'Profile retrieved successfully');
 
   } catch (error) {
-    console.error('❌ Get me controller error:', error);
+    console.error('Get me controller error:', error);
     return errorResponse(res, 'Failed to get user profile', 500);
   }
 };
@@ -307,7 +307,7 @@ export const updateProfile = async (req, res) => {
       .single();
 
     if (error) {
-      console.error('❌ Update profile error:', error);
+      console.error('Update profile error:', error);
       const formattedError = formatSupabaseError(error);
       return errorResponse(res, formattedError.message, 400);
     }
@@ -315,7 +315,7 @@ export const updateProfile = async (req, res) => {
     return successResponse(res, data, 'Profile updated successfully');
 
   } catch (error) {
-    console.error('❌ Update profile controller error:', error);
+    console.error('Update profile controller error:', error);
     return errorResponse(res, 'Failed to update profile', 500);
   }
 };
