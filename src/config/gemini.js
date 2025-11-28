@@ -27,28 +27,45 @@ export const getAssessmentGuidance = async ({ formType, responses, score, severi
   }
 
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
     // Strict, concise, and fast prompt
-    const prompt = `
-SYSTEM: You are a concise, supportive mental health assistant for college students using SensEase. ALWAYS keep responses short.
+    const prompt = `You are a supportive mental health assistant for a college student wellbeing platform.
+Your job is to provide compassionate, brief, and practical guidance based on a mental health assessment.
 
-INPUT:
-- Form: ${formType}
+Assessment Details:
+- Form Type: ${formType}
 - Score: ${score}
-- Severity: ${severityLevel}
-- Responses JSON: ${JSON.stringify(responses)}
+- Severity Level: ${severityLevel}
+- Responses: ${JSON.stringify(responses)}
 
-RESPONSE RULES (STRICT):
-1. Personalized Guidance: 3–5 sentences, MAX 90 words. Warm tone. No long paragraphs.
-2. Recommended Actions: 5–7 items. EACH item is ONE short sentence (≤15 words). No explanations.
-3. Output JSON ONLY:
+GUIDELINES:
+I. Keep everything SHORT:
+   - Guidance: 5–7 crisp sentences (maximum 100 words)
+   - Actions: 5–7 items, each a single short sentence (maximum 15 words)
+II. Tone should be warm, supportive, and non-judgmental.
+III. Do NOT mention:
+   - Alcohol, drugs, medication, substance use
+   - Diagnoses or medical instructions
+   - Anything that could be interpreted as clinical treatment
+IV. Focus only on safe, practical wellbeing strategies.
+V. Suitable for college students: consider academic stress, lifestyle, and campus support.
+VI. Encourage reaching out for help, but do NOT give crisis hotlines unless severity is "Severe".
+VII. Never create long paragraphs. Keep everything direct and skimmable.
+VIII. Platform features: journaling, habit trackers, grounding tools, guided meditation, calming audios/videos, anonymous community rooms, productivity tools (Pomodoro, Eisenhower matrix), counselor session booking. Include 1–3 relevant app features in actions.
+
+OUTPUT FORMAT (STRICT JSON):
 {
-  "guidance": "<= 90 words",
-  "recommendedActions": [ "<=15 words", "<=15 words", "<=15 words", "<=15 words", "<=15 words" ]
+  "guidance": "5–7 short supportive sentences (max 100 words).",
+  "recommendedActions": [
+    "Short action 1.",
+    "Short action 2.",
+    "Short action 3.",
+    "Short action 4.",
+    "Short action 5."
+  ]
 }
-4. Do NOT add extra fields, titles, disclaimers, or markdown. No code fences.
-`;
+Return ONLY valid JSON. Do not include markdown or explanations.`;
 
     const generationConfig = { maxOutputTokens: 256, temperature: 0.6 }; // cap length for speed and brevity
     const result = await model.generateContent({ contents: [{ role: 'user', parts: [{ text: prompt }]}], generationConfig });
@@ -62,7 +79,7 @@ RESPONSE RULES (STRICT):
 
     // Defensive trimming to enforce constraints
     const guidance = String(parsedResponse.guidance || '').trim();
-    const trimmedGuidance = guidance.split(/\s+/).slice(0, 90).join(' '); // approx 90 words cap
+    const trimmedGuidance = guidance.split(/\s+/).slice(0, 100).join(' '); // approx 100 words cap
 
     const actions = Array.isArray(parsedResponse.recommendedActions) ? parsedResponse.recommendedActions : [];
     const trimmedActions = actions
@@ -87,72 +104,61 @@ RESPONSE RULES (STRICT):
 const getFallbackGuidance = (formType, severityLevel) => {
   const guidanceMap = {
     'minimal': {
-      guidance: `Your ${formType} assessment shows minimal concerns. You're doing well in maintaining your mental health. Continue practicing self-care and healthy habits. Remember, it's normal to have ups and downs, and it's great that you're being proactive about your wellbeing.`,
+      guidance: "Your results show minimal concerns, which is great. You're managing well and being proactive about your mental health is important. Keep up the healthy habits you have in place. It's normal to have ups and downs, so continue checking in with yourself. Stay connected with supportive people around you.",
       recommendedActions: [
-        'Continue your current self-care routine',
-        'Stay connected with friends and family',
-        'Maintain a healthy sleep schedule',
-        'Engage in regular physical activity',
-        'Practice stress management techniques like deep breathing or meditation',
-        'Keep track of your mood and wellbeing',
-        'Don\'t hesitate to reach out for support if things change'
+        'Maintain your current routines.',
+        'Stay connected with supportive people.',
+        'Get regular sleep and rest.',
+        'Engage in activities you enjoy.',
+        'Use journaling to track your mood.',
+        'Monitor changes in mood or stress.'
       ]
     },
     'mild': {
-      guidance: `Your ${formType} assessment indicates mild concerns. This is common among college students, and there are many effective strategies to help you feel better. Taking this assessment is a positive first step. With some adjustments to your routine and support, you can improve your wellbeing.`,
+      guidance: "Your results show mild concerns, which are very common among college students. Taking this assessment is a positive first step. Small adjustments in your routine and reaching out for support can make a real difference. Many students navigate similar feelings, and there are effective strategies to help you feel better. You're not alone in this experience.",
       recommendedActions: [
-        'Schedule an appointment with your campus counseling center',
-        'Practice daily self-care activities (exercise, hobbies, relaxation)',
-        'Establish a consistent sleep schedule (7-9 hours)',
-        'Connect with friends or join a support group',
-        'Limit caffeine and maintain a balanced diet',
-        'Try mindfulness or meditation apps',
-        'Talk to a trusted friend, family member, or counselor about how you\'re feeling',
-        'Monitor your symptoms and retake the assessment in a few weeks'
+        'Practice a simple self-care activity daily.',
+        'Maintain consistent sleep and meal routines.',
+        'Talk with a friend or mentor.',
+        'Try guided meditation or grounding tools.',
+        'Use habit trackers to build healthy routines.',
+        'Reach out for campus support if symptoms persist.'
       ]
     },
     'moderate': {
-      guidance: `Your ${formType} assessment indicates moderate concerns that deserve attention. Many college students experience similar challenges, and there are effective treatments and support available. It's important to reach out for professional help. Your wellbeing matters, and you don't have to face this alone.`,
+      guidance: "Your results suggest moderate concerns that deserve attention. Many college students experience similar challenges, especially with academic and social pressures. The good news is that support and self-care strategies can really help. You're taking an important step by checking in. Consider reaching out to your campus counseling center—they're there to support you. You don't have to face this alone.",
       recommendedActions: [
-        'Contact your campus counseling center as soon as possible',
-        'Talk to your academic advisor about support options',
-        'Consider joining a support group or therapy sessions',
-        'Practice stress-reduction techniques daily (meditation, yoga, deep breathing)',
-        'Maintain regular social connections - don\'t isolate yourself',
-        'Establish healthy routines (regular sleep, meals, exercise)',
-        'Limit alcohol and avoid substance use',
-        'Be open with trusted people in your life about what you\'re experiencing',
-        'Consider speaking with your doctor about treatment options'
+        'Reach out to your campus counseling center.',
+        'Talk to someone you trust about how you feel.',
+        'Use stress-reduction practices like deep breathing.',
+        'Try calming audios or meditation from the app.',
+        'Follow a stable routine for sleep and meals.',
+        'Connect socially instead of isolating.',
+        'Book a counselor session if available.'
       ]
     },
     'severe': {
-      guidance: `Your ${formType} assessment indicates significant concerns that require immediate professional attention. Please know that you are not alone, and effective help is available. Your college counseling center and other mental health professionals can provide the support you need. Taking action now is crucial for your wellbeing and recovery.`,
+      guidance: "Your results suggest significant concerns, and it's really important to reach out for support right away. You don't have to handle this alone—professional help is available and can make a real difference. Please contact your campus counseling center or a trusted person today. Many students have been where you are and found their way through with the right support. Taking action now is a crucial step toward feeling better.",
       recommendedActions: [
-        '🚨 PRIORITY: Contact your campus counseling center immediately',
-        'If you\'re in crisis, call the 988 Suicide & Crisis Lifeline (available 24/7)',
-        'Reach out to a trusted friend or family member right away',
-        'Visit your college health center or see a doctor',
-        'Don\'t be alone - stay with someone you trust',
-        'Consider taking a temporary break from academic pressures if needed',
-        'Avoid making major life decisions right now',
-        'Remove access to means of self-harm if you\'re having those thoughts',
-        'Follow up with professional treatment consistently',
-        'Remember: This is temporary, help is available, and recovery is possible'
+        'Contact your campus counseling services immediately.',
+        'Talk to a trusted friend or family member.',
+        'Avoid being alone—stay around supportive people.',
+        'Take a break from overwhelming tasks if needed.',
+        'Use grounding tools for calming.',
+        'Seek professional help as soon as possible.',
+        'Call 988 Suicide & Crisis Lifeline if in crisis.'
       ]
     },
     'moderately severe': {
-      guidance: `Your ${formType} assessment indicates moderately severe concerns that require immediate professional attention. Please know that you are not alone, and effective help is available. Your college counseling center and other mental health professionals can provide the support you need. Taking action now is crucial for your wellbeing and recovery.`,
+      guidance: "Your results suggest significant concerns, and it's really important to reach out for support right away. You don't have to handle this alone—professional help is available and can make a real difference. Please contact your campus counseling center or a trusted person today. Many students have been where you are and found their way through with the right support. Taking action now is a crucial step toward feeling better.",
       recommendedActions: [
-        '🚨 PRIORITY: Contact your campus counseling center immediately',
-        'If you\'re in crisis, call the 988 Suicide & Crisis Lifeline (available 24/7)',
-        'Reach out to a trusted friend or family member right away',
-        'Visit your college health center or see a doctor',
-        'Don\'t be alone - stay with someone you trust',
-        'Consider taking a temporary break from academic pressures if needed',
-        'Avoid making major life decisions right now',
-        'Remove access to means of self-harm if you\'re having those thoughts',
-        'Follow up with professional treatment consistently',
-        'Remember: This is temporary, help is available, and recovery is possible'
+        'Contact your campus counseling services immediately.',
+        'Talk to a trusted friend or family member.',
+        'Avoid being alone—stay around supportive people.',
+        'Take a break from overwhelming tasks if needed.',
+        'Use grounding tools for calming.',
+        'Seek professional help as soon as possible.',
+        'Call 988 Suicide & Crisis Lifeline if in crisis.'
       ]
     }
   };
