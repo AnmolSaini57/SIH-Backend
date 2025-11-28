@@ -48,6 +48,12 @@ const authLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skipSuccessfulRequests: true, // Don't count successful requests
+  // Usingg email + IP combination to prevent blocking all users on same network
+  keyGenerator: (req) => {
+    const email = req.body?.email || 'unknown';
+    const ip = req.ip;
+    return `${email}_${ip}`;
+  },
 });
 
 // Body parsing middleware

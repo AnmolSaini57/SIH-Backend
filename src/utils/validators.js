@@ -189,6 +189,43 @@ export const adminSchemas = {
     content: Joi.string().min(10).max(5000).required(),
     type: Joi.string().valid('info', 'warning', 'urgent', 'event').default('info'),
     target_role: Joi.string().valid('all', 'student', 'counsellor').default('all')
+  }),
+  
+  createStudent: Joi.object({
+    name: Joi.string().min(2).max(100).required().messages({
+      'string.min': 'Name must be at least 2 characters long',
+      'any.required': 'Name is required'
+    }),
+    email: commonSchemas.email,
+    password: commonSchemas.password,
+    phone: Joi.string().pattern(/^[0-9]{10}$/).optional().allow('', null).messages({
+      'string.pattern.base': 'Phone must be a valid 10-digit number'
+    }),
+    year: Joi.number().integer().min(1).max(5).optional().allow(null).messages({
+      'number.min': 'Year must be between 1 and 5',
+      'number.max': 'Year must be between 1 and 5'
+    }),
+    branch: Joi.string().max(100).optional().allow('', null),
+    roll_no: Joi.string().max(50).optional().allow('', null),
+    bio: Joi.string().max(500).optional().allow('', null)
+  }),
+  
+  createCounsellor: Joi.object({
+    name: Joi.string().min(2).max(100).required().messages({
+      'string.min': 'Name must be at least 2 characters long',
+      'any.required': 'Name is required'
+    }),
+    email: commonSchemas.email,
+    password: commonSchemas.password,
+    phone: Joi.string().pattern(/^[0-9]{10}$/).optional().allow('', null).messages({
+      'string.pattern.base': 'Phone must be a valid 10-digit number'
+    }),
+    specialization: Joi.string().max(200).optional().allow('', null),
+    bio: Joi.string().max(500).optional().allow('', null)
+  }),
+  
+  changeUserPassword: Joi.object({
+    new_password: commonSchemas.password
   })
 };
 

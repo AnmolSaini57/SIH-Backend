@@ -18,7 +18,7 @@ const corsOptions = {
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
-      console.log(`❌ CORS blocked request from origin: ${origin}`);
+      console.log(`CORS blocked request from origin: ${origin}`);
       callback(new Error('Not allowed by CORS policy'));
     }
   },

@@ -95,7 +95,7 @@ export const getGlobalDashboardStats = async (req, res) => {
 
     return successResponse(res, stats, 'Global dashboard stats retrieved successfully');
   } catch (error) {
-    console.error('❌ Get global dashboard stats error:', error);
+    console.error('Get global dashboard stats error:', error);
     return errorResponse(res, 'Failed to get dashboard stats', 500);
   }
 };
@@ -143,7 +143,7 @@ export const getColleges = async (req, res) => {
 
     return paginatedResponse(res, data, page, limit, count);
   } catch (error) {
-    console.error('❌ Get colleges error:', error);
+    console.error('Get colleges error:', error);
     return errorResponse(res, 'Failed to get colleges', 500);
   }
 };
@@ -189,7 +189,7 @@ export const createCollege = async (req, res) => {
 
     return successResponse(res, data, 'College created successfully', 201);
   } catch (error) {
-    console.error('❌ Create college error:', error);
+    console.error('Create college error:', error);
     return errorResponse(res, 'Failed to create college', 500);
   }
 };
@@ -225,7 +225,7 @@ export const updateCollege = async (req, res) => {
 
     return successResponse(res, data, 'College updated successfully');
   } catch (error) {
-    console.error('❌ Update college error:', error);
+    console.error('Update college error:', error);
     return errorResponse(res, 'Failed to update college', 500);
   }
 };
@@ -341,7 +341,7 @@ export const getCollegeDetails = async (req, res) => {
 
     return successResponse(res, collegeDetails, 'College details retrieved successfully');
   } catch (error) {
-    console.error('❌ Get college details error:', error);
+    console.error('Get college details error:', error);
     return errorResponse(res, 'Failed to get college details', 500);
   }
 };
@@ -400,7 +400,7 @@ export const getGlobalAnalytics = async (req, res) => {
 
     return successResponse(res, analytics, 'Global analytics retrieved successfully');
   } catch (error) {
-    console.error('❌ Get global analytics error:', error);
+    console.error('Get global analytics error:', error);
     return errorResponse(res, 'Failed to get global analytics', 500);
   }
 };
@@ -439,7 +439,7 @@ export const getSystemHealth = async (req, res) => {
 
     return successResponse(res, metrics, 'System health retrieved successfully');
   } catch (error) {
-    console.error('❌ Get system health error:', error);
+    console.error('Get system health error:', error);
     return errorResponse(res, 'Failed to get system health', 500);
   }
 };
@@ -500,7 +500,7 @@ export const createSystemAdmin = async (req, res) => {
 
     return successResponse(res, userData, 'System admin created successfully', 201);
   } catch (error) {
-    console.error('❌ Create system admin error:', error);
+    console.error('Create system admin error:', error);
     return errorResponse(res, 'Failed to create system admin', 500);
   }
 };

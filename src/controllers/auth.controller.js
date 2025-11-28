@@ -8,15 +8,13 @@ import {
 } from "../utils/response.js";
 import bcrypt from "bcryptjs";
 
-/**
- * Authentication Controller
- * Handles user authentication, registration, and session management
- */
 
-/**
- * User login with email and password
- * Sets secure HTTP-only cookies for session management
- */
+ // Authentication Controller
+ // Handles user authentication, registration, and session management
+
+// User login with email and password
+// Sets secure HTTP-only cookies for session management
+ 
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -143,7 +141,7 @@ export const register = async (req, res) => {
     });
 
     if (error) {
-      console.error('❌ Registration error:', error);
+      console.error('Registration error:', error);
       const formattedError = formatSupabaseError(error);
       return errorResponse(res, formattedError.message, 400);
     }
@@ -163,7 +161,7 @@ export const register = async (req, res) => {
       });
 
     if (profileError) {
-      console.error('❌ Profile creation error:', profileError);
+      console.error('Profile creation error:', profileError);
       // Clean up user if profile creation fails
       await supabaseAdmin.auth.admin.deleteUser(user.id);
       const formattedError = formatSupabaseError(profileError);
@@ -183,7 +181,7 @@ export const register = async (req, res) => {
     return successResponse(res, userData, 'Registration successful', 201);
 
   } catch (error) {
-    console.error('❌ Registration controller error:', error);
+    console.error('Registration controller error:', error);
     return errorResponse(res, 'Registration failed', 500);
   }
 };
@@ -221,102 +219,6 @@ export const logout = async (req, res) => {
     res.clearCookie("sb-access-token");
     res.clearCookie("sb-refresh-token");
     return successResponse(res, null, 'Logout completed');
-  }
-};
-
-/**
- * Get current user information
- * Returns authenticated user's profile data
- */
-export const getMe = async (req, res) => {
-  try {
-    const userId = req.user.user_id;
-
-    // Get user profile with college information
-    const { data: profile, error } = await supabase
-      .from('profiles')
-      .select(`
-        id,
-        email,
-        name,
-        role,
-        college_id,
-        avatar_url,
-        phone,
-        bio,
-        created_at,
-        updated_at,
-        colleges (
-          id,
-          name
-        )
-      `)
-      .eq('id', userId)
-      .single();
-
-    if (error) {
-      console.error('Get profile error:', error);
-      const formattedError = formatSupabaseError(error);
-      return errorResponse(res, formattedError.message, 404);
-    }
-
-    return successResponse(res, profile, 'Profile retrieved successfully');
-
-  } catch (error) {
-    console.error('Get me controller error:', error);
-    return errorResponse(res, 'Failed to get user profile', 500);
-  }
-};
-
-/**
- * Update user profile
- * Allows users to update their profile information
- */
-export const updateProfile = async (req, res) => {
-  try {
-    const userId = req.user.user_id;
-    const updates = req.body;
-
-    // Remove sensitive fields that shouldn't be updated directly
-    delete updates.id;
-    delete updates.email;
-    delete updates.role;
-    delete updates.college_id;
-    delete updates.created_at;
-
-    // Add updated timestamp
-    updates.updated_at = new Date().toISOString();
-
-    // Update profile in database
-    const { data, error } = await supabase
-      .from('profiles')
-      .update(updates)
-      .eq('id', userId)
-      .select(`
-        id,
-        email,
-        name,
-        role,
-        college_id,
-        avatar_url,
-        phone,
-        bio,
-        created_at,
-        updated_at
-      `)
-      .single();
-
-    if (error) {
-      console.error('Update profile error:', error);
-      const formattedError = formatSupabaseError(error);
-      return errorResponse(res, formattedError.message, 400);
-    }
-
-    return successResponse(res, data, 'Profile updated successfully');
-
-  } catch (error) {
-    console.error('Update profile controller error:', error);
-    return errorResponse(res, 'Failed to update profile', 500);
   }
 };
 
@@ -388,20 +290,5 @@ export const requestPasswordReset = async (req, res) => {
   } catch (error) {
     console.error('Request password reset controller error:', error);
     return errorResponse(res, 'Failed to process password reset request', 500);
-  }
-};
-
-/**
- * Refresh authentication token
- * Handled automatically by auth middleware, but can be called explicitly
- */
-export const refreshToken = async (req, res) => {
-  try {
-    // This is primarily handled by the auth middleware
-    // This endpoint can be used for explicit refresh requests
-    return successResponse(res, null, 'Token refreshed successfully');
-  } catch (error) {
-    console.error('❌ Refresh token controller error:', error);
-    return errorResponse(res, 'Failed to refresh token', 500);
   }
 };

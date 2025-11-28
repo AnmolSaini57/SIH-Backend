@@ -8,14 +8,9 @@ import {
 } from "../utils/response.js";
 import { applyTenantFilter } from "../middleware/tenant.js";
 
-/**
- * Student Controller
- * Handles student-specific operations and data
- */
+//////////////////////// STUDENT PROFILE MANAGEMENT /////////////////////////////
 
-/**
- * Get student profile
- */
+// Get student profile
 export const getProfile = async (req, res) => {
   try {
     const { data, error } = await supabase
@@ -52,9 +47,7 @@ export const getProfile = async (req, res) => {
   }
 };
 
-/**
- * Update student profile
- */
+// Update student profile
 export const updateProfile = async (req, res) => {
   try {
     const updates = { ...req.body, updated_at: new Date().toISOString() };
@@ -85,223 +78,8 @@ export const updateProfile = async (req, res) => {
   }
 };
 
-/**
- * Get student's assessment history
- */
-export const getAssessments = async (req, res) => {
-  try {
-    const { page = 1, limit = 20 } = req.query;
-    const offset = (page - 1) * limit;
 
-    let query = supabase
-      .from('assessment_submissions')
-      .select(`
-        id,
-        form_id,
-        score,
-        severity,
-        created_at,
-        assessment_forms (
-          id,
-          name,
-          title,
-          description
-        )
-      `, { count: 'exact' })
-      .eq('user_id', req.user.user_id);
-
-    // Apply tenant filter
-    query = applyTenantFilter(query, req, 'college_id');
-    
-    const { data, error, count } = await query
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1);
-
-    if (error) {
-      const formattedError = formatSupabaseError(error);
-      return errorResponse(res, formattedError.message, 400);
-    }
-
-    return paginatedResponse(res, data, page, limit, count);
-  } catch (error) {
-    console.error('Get student assessments error:', error);
-    return errorResponse(res, 'Failed to get assessments', 500);
-  }
-};
-
-/**
- * Submit assessment
- */
-export const submitAssessment = async (req, res) => {
-  try {
-    const { form_id, responses, session_id } = req.body;
-
-    // Verify assessment form exists and is available for this college
-    const { data: form, error: formError } = await supabase
-      .from('assessment_forms')
-      .select('id, name, questions')
-      .eq('id', form_id)
-      .eq('is_active', true)
-      .single();
-
-    if (formError || !form) {
-      return notFoundResponse(res, 'Assessment form');
-    }
-
-    // Calculate score based on responses
-    const score = calculateAssessmentScore(form.questions, responses);
-    const severity = calculateSeverity(score, form.name);
-
-    // Insert assessment submission
-    const { data, error } = await supabase
-      .from('assessment_submissions')
-      .insert({
-        user_id: req.user.user_id,
-        college_id: req.tenant,
-        form_id,
-        session_id,
-        responses,
-        score,
-        severity,
-        created_at: new Date().toISOString()
-      })
-      .select(`
-        id,
-        form_id,
-        score,
-        severity,
-        created_at,
-        assessment_forms (
-          name,
-          title
-        )
-      `)
-      .single();
-
-    if (error) {
-      const formattedError = formatSupabaseError(error);
-      return errorResponse(res, formattedError.message, 400);
-    }
-
-    // Get guidance based on score and form type
-    const guidance = getAssessmentGuidance(form.name, score, severity);
-
-    return successResponse(res, {
-      submission: data,
-      guidance
-    }, 'Assessment submitted successfully', 201);
-
-  } catch (error) {
-    console.error('Submit assessment error:', error);
-    return errorResponse(res, 'Failed to submit assessment', 500);
-  }
-};
-
-/**
- * Get student's communities
- */
-export const getCommunities = async (req, res) => {
-  try {
-    const { page = 1, limit = 20 } = req.query;
-    const offset = (page - 1) * limit;
-
-    let query = supabase
-      .from('community_members')
-      .select(`
-        id,
-        joined_at,
-        communities (
-          id,
-          name,
-          description,
-          is_private,
-          member_count,
-          created_at
-        )
-      `, { count: 'exact' })
-      .eq('user_id', req.user.user_id);
-
-    // Apply tenant filter through communities
-    query = query.eq('communities.college_id', req.tenant);
-
-    const { data, error, count } = await query
-      .order('joined_at', { ascending: false })
-      .range(offset, offset + limit - 1);
-
-    if (error) {
-      const formattedError = formatSupabaseError(error);
-      return errorResponse(res, formattedError.message, 400);
-    }
-
-    return paginatedResponse(res, data, page, limit, count);
-  } catch (error) {
-    console.error('❌ Get student communities error:', error);
-    return errorResponse(res, 'Failed to get communities', 500);
-  }
-};
-
-/**
- * Join a community
- */
-export const joinCommunity = async (req, res) => {
-  try {
-    const { community_id } = req.params;
-
-    // Verify community exists and belongs to same college
-    const { data: community, error: communityError } = await supabase
-      .from('communities')
-      .select('id, name, is_private, member_count')
-      .eq('id', community_id)
-      .eq('college_id', req.tenant)
-      .single();
-
-    if (communityError || !community) {
-      return notFoundResponse(res, 'Community');
-    }
-
-    // Check if already a member
-    const { data: existingMember } = await supabase
-      .from('community_members')
-      .select('id')
-      .eq('community_id', community_id)
-      .eq('user_id', req.user.user_id)
-      .single();
-
-    if (existingMember) {
-      return errorResponse(res, 'Already a member of this community', 409);
-    }
-
-    // Join community
-    const { data, error } = await supabase
-      .from('community_members')
-      .insert({
-        community_id,
-        user_id: req.user.user_id,
-        joined_at: new Date().toISOString()
-      })
-      .select()
-      .single();
-
-    if (error) {
-      const formattedError = formatSupabaseError(error);
-      return errorResponse(res, formattedError.message, 400);
-    }
-
-    // Update community member count
-    await supabase
-      .from('communities')
-      .update({ 
-        member_count: community.member_count + 1 
-      })
-      .eq('id', community_id);
-
-    return successResponse(res, data, `Joined ${community.name} successfully`, 201);
-  } catch (error) {
-    console.error('❌ Join community error:', error);
-    return errorResponse(res, 'Failed to join community', 500);
-  }
-};
-
+///////////////////// APPOINTMENT MANAGEMENT /////////////////////////
 
 /**
  * Book an appointment
@@ -371,7 +149,7 @@ export const bookAppointment = async (req, res) => {
 
     return successResponse(res, data, 'Appointment booked successfully', 201);
   } catch (error) {
-    console.error('❌ Book appointment error:', error);
+    console.error('Book appointment error:', error);
     return errorResponse(res, 'Failed to book appointment', 500);
   }
 };
@@ -477,7 +255,7 @@ export const getCollegeCounsellorsWithAvailability = async (req, res) => {
 
     return successResponse(res, result, 'Counsellors with availability retrieved successfully');
   } catch (error) {
-    console.error('❌ Get college counsellors availability error:', error);
+    console.error('Get college counsellors availability error:', error);
     return errorResponse(res, 'Failed to get counsellors availability', 500);
   }
 };
@@ -602,10 +380,267 @@ export const getSessionsSummary = async (req, res) => {
 
     return successResponse(res, sessions, 'Sessions summary retrieved successfully');
   } catch (error) {
-    console.error('❌ Get sessions summary error:', error);
+    console.error('Get sessions summary error:', error);
     return errorResponse(res, 'Failed to get sessions summary', 500);
   }
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/**
+ * Get student's communities
+ */
+export const getCommunities = async (req, res) => {
+  try {
+    const { page = 1, limit = 20 } = req.query;
+    const offset = (page - 1) * limit;
+
+    let query = supabase
+      .from('community_members')
+      .select(`
+        id,
+        joined_at,
+        communities (
+          id,
+          name,
+          description,
+          is_private,
+          member_count,
+          created_at
+        )
+      `, { count: 'exact' })
+      .eq('user_id', req.user.user_id);
+
+    // Apply tenant filter through communities
+    query = query.eq('communities.college_id', req.tenant);
+
+    const { data, error, count } = await query
+      .order('joined_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (error) {
+      const formattedError = formatSupabaseError(error);
+      return errorResponse(res, formattedError.message, 400);
+    }
+
+    return paginatedResponse(res, data, page, limit, count);
+  } catch (error) {
+    console.error('Get student communities error:', error);
+    return errorResponse(res, 'Failed to get communities', 500);
+  }
+};
+
+/**
+ * Join a community
+ */
+export const joinCommunity = async (req, res) => {
+  try {
+    const { community_id } = req.params;
+
+    // Verify community exists and belongs to same college
+    const { data: community, error: communityError } = await supabase
+      .from('communities')
+      .select('id, name, is_private, member_count')
+      .eq('id', community_id)
+      .eq('college_id', req.tenant)
+      .single();
+
+    if (communityError || !community) {
+      return notFoundResponse(res, 'Community');
+    }
+
+    // Check if already a member
+    const { data: existingMember } = await supabase
+      .from('community_members')
+      .select('id')
+      .eq('community_id', community_id)
+      .eq('user_id', req.user.user_id)
+      .single();
+
+    if (existingMember) {
+      return errorResponse(res, 'Already a member of this community', 409);
+    }
+
+    // Join community
+    const { data, error } = await supabase
+      .from('community_members')
+      .insert({
+        community_id,
+        user_id: req.user.user_id,
+        joined_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (error) {
+      const formattedError = formatSupabaseError(error);
+      return errorResponse(res, formattedError.message, 400);
+    }
+
+    // Update community member count
+    await supabase
+      .from('communities')
+      .update({ 
+        member_count: community.member_count + 1 
+      })
+      .eq('id', community_id);
+
+    return successResponse(res, data, `Joined ${community.name} successfully`, 201);
+  } catch (error) {
+    console.error('Join community error:', error);
+    return errorResponse(res, 'Failed to join community', 500);
+  }
+};
+
+
+
+/**
+ * Get student's assessment history
+ */
+export const getAssessments = async (req, res) => {
+  try {
+    const { page = 1, limit = 20 } = req.query;
+    const offset = (page - 1) * limit;
+
+    let query = supabase
+      .from('assessment_submissions')
+      .select(`
+        id,
+        form_id,
+        score,
+        severity,
+        created_at,
+        assessment_forms (
+          id,
+          name,
+          title,
+          description
+        )
+      `, { count: 'exact' })
+      .eq('user_id', req.user.user_id);
+
+    // Apply tenant filter
+    query = applyTenantFilter(query, req, 'college_id');
+    
+    const { data, error, count } = await query
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (error) {
+      const formattedError = formatSupabaseError(error);
+      return errorResponse(res, formattedError.message, 400);
+    }
+
+    return paginatedResponse(res, data, page, limit, count);
+  } catch (error) {
+    console.error('Get student assessments error:', error);
+    return errorResponse(res, 'Failed to get assessments', 500);
+  }
+};
+
+/**
+ * Submit assessment
+ */
+export const submitAssessment = async (req, res) => {
+  try {
+    const { form_id, responses, session_id } = req.body;
+
+    // Verify assessment form exists and is available for this college
+    const { data: form, error: formError } = await supabase
+      .from('assessment_forms')
+      .select('id, name, questions')
+      .eq('id', form_id)
+      .eq('is_active', true)
+      .single();
+
+    if (formError || !form) {
+      return notFoundResponse(res, 'Assessment form');
+    }
+
+    // Calculate score based on responses
+    const score = calculateAssessmentScore(form.questions, responses);
+    const severity = calculateSeverity(score, form.name);
+
+    // Insert assessment submission
+    const { data, error } = await supabase
+      .from('assessment_submissions')
+      .insert({
+        user_id: req.user.user_id,
+        college_id: req.tenant,
+        form_id,
+        session_id,
+        responses,
+        score,
+        severity,
+        created_at: new Date().toISOString()
+      })
+      .select(`
+        id,
+        form_id,
+        score,
+        severity,
+        created_at,
+        assessment_forms (
+          name,
+          title
+        )
+      `)
+      .single();
+
+    if (error) {
+      const formattedError = formatSupabaseError(error);
+      return errorResponse(res, formattedError.message, 400);
+    }
+
+    // Get guidance based on score and form type
+    const guidance = getAssessmentGuidance(form.name, score, severity);
+
+    return successResponse(res, {
+      submission: data,
+      guidance
+    }, 'Assessment submitted successfully', 201);
+
+  } catch (error) {
+    console.error('Submit assessment error:', error);
+    return errorResponse(res, 'Failed to submit assessment', 500);
+  }
+};
+
+
 
 // Helper functions
 function calculateAssessmentScore(questions, responses) {

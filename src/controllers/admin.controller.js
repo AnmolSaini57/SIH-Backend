@@ -104,109 +104,11 @@ export const getDashboardStats = async (req, res) => {
 
     return successResponse(res, stats, 'Dashboard stats retrieved successfully');
   } catch (error) {
-    console.error('❌ Get admin dashboard stats error:', error);
+    console.error('Get admin dashboard stats error:', error);
     return errorResponse(res, 'Failed to get dashboard stats', 500);
   }
 };
 
-/**
- * Get all users in the college
- */
-export const getUsers = async (req, res) => {
-  try {
-    const { page = 1, limit = 20, role, search } = req.query;
-    const offset = (page - 1) * limit;
-
-    let query = supabase
-      .from('profiles')
-      .select(`
-        id,
-        email,
-        name,
-        role,
-        avatar_url,
-        phone,
-        created_at,
-        updated_at
-      `, { count: 'exact' })
-      .eq('college_id', req.tenant);
-
-    if (role && role !== 'all') {
-      query = query.eq('role', role);
-    }
-
-    if (search) {
-      query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%`);
-    }
-
-    const { data, error, count } = await query
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1);
-
-    if (error) {
-      const formattedError = formatSupabaseError(error);
-      return errorResponse(res, formattedError.message, 400);
-    }
-
-    return paginatedResponse(res, data, page, limit, count);
-  } catch (error) {
-    console.error('❌ Get users error:', error);
-    return errorResponse(res, 'Failed to get users', 500);
-  }
-};
-
-/**
- * Get user details
- */
-export const getUserDetails = async (req, res) => {
-  try {
-    const { user_id } = req.params;
-
-    const { data, error } = await supabase
-      .from('profiles')
-      .select(`
-        id,
-        email,
-        name,
-        role,
-        avatar_url,
-        phone,
-        bio,
-        created_at,
-        updated_at,
-        assessment_submissions (
-          id,
-          score,
-          severity,
-          created_at,
-          assessment_forms (
-            name,
-            title
-          )
-        ),
-        appointments (
-          id,
-          date,
-          time,
-          status,
-          type
-        )
-      `)
-      .eq('id', user_id)
-      .eq('college_id', req.tenant)
-      .single();
-
-    if (error) {
-      const formattedError = formatSupabaseError(error);
-      return errorResponse(res, formattedError.message, 404);
-    }
-
-    return successResponse(res, data, 'User details retrieved successfully');
-  } catch (error) {
-    console.error('Get user details error:', error);
-    return errorResponse(res, 'Failed to get user details', 500);
-  }
-};
 
 /**
  * Create announcement
@@ -250,7 +152,7 @@ export const createAnnouncement = async (req, res) => {
 
     return successResponse(res, data, 'Announcement created successfully', 201);
   } catch (error) {
-    console.error('❌ Create announcement error:', error);
+    console.error('Create announcement error:', error);
     return errorResponse(res, 'Failed to create announcement', 500);
   }
 };
@@ -299,7 +201,7 @@ export const getAnnouncements = async (req, res) => {
 
     return paginatedResponse(res, data, page, limit, count);
   } catch (error) {
-    console.error('❌ Get announcements error:', error);
+    console.error('Get announcements error:', error);
     return errorResponse(res, 'Failed to get announcements', 500);
   }
 };
@@ -331,7 +233,7 @@ export const updateAnnouncement = async (req, res) => {
 
     return successResponse(res, data, 'Announcement updated successfully');
   } catch (error) {
-    console.error('❌ Update announcement error:', error);
+    console.error('Update announcement error:', error);
     return errorResponse(res, 'Failed to update announcement', 500);
   }
 };
@@ -356,7 +258,7 @@ export const deleteAnnouncement = async (req, res) => {
 
     return successResponse(res, null, 'Announcement deleted successfully');
   } catch (error) {
-    console.error('❌ Delete announcement error:', error);
+    console.error('Delete announcement error:', error);
     return errorResponse(res, 'Failed to delete announcement', 500);
   }
 };
@@ -400,7 +302,7 @@ export const getAssessmentAnalytics = async (req, res) => {
 
     return successResponse(res, analytics, 'Assessment analytics retrieved successfully');
   } catch (error) {
-    console.error('❌ Get assessment analytics error:', error);
+    console.error('Get assessment analytics error:', error);
     return errorResponse(res, 'Failed to get assessment analytics', 500);
   }
 };
@@ -438,7 +340,7 @@ export const getCommunities = async (req, res) => {
 
     return paginatedResponse(res, data, page, limit, count);
   } catch (error) {
-    console.error('❌ Get communities error:', error);
+    console.error('Get communities error:', error);
     return errorResponse(res, 'Failed to get communities', 500);
   }
 };
@@ -477,7 +379,7 @@ export const generateReport = async (req, res) => {
 
     return successResponse(res, report, 'Report generated successfully');
   } catch (error) {
-    console.error('❌ Generate report error:', error);
+    console.error('Generate report error:', error);
     return errorResponse(res, 'Failed to generate report', 500);
   }
 };
@@ -578,3 +480,404 @@ async function generateAppointmentsReport(collegeId, fromDate) {
     typeDistribution
   };
 }
+
+
+///////////////////// USER MANAGEMENT /////////////////////////
+
+/**
+ * Get all users in the college
+ */
+export const getUsers = async (req, res) => {
+  try {
+    const { page = 1, limit = 20, role, search } = req.query;
+    const offset = (page - 1) * limit;
+
+    let query = supabase
+      .from('profiles')
+      .select(`
+        id,
+        email,
+        name,
+        role,
+        avatar_url,
+        phone,
+        created_at,
+        updated_at
+      `, { count: 'exact' })
+      .eq('college_id', req.tenant);
+
+    if (role && role !== 'all') {
+      query = query.eq('role', role);
+    }
+
+    if (search) {
+      query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%`);
+    }
+
+    const { data, error, count } = await query
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (error) {
+      const formattedError = formatSupabaseError(error);
+      return errorResponse(res, formattedError.message, 400);
+    }
+
+    return paginatedResponse(res, data, page, limit, count);
+  } catch (error) {
+    console.error('Get users error:', error);
+    return errorResponse(res, 'Failed to get users', 500);
+  }
+};
+
+/**
+ * Get user details
+ */
+export const getUserDetails = async (req, res) => {
+  try {
+    const { user_id } = req.params;
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .select(`
+        id,
+        email,
+        name,
+        role,
+        avatar_url,
+        phone,
+        bio,
+        created_at,
+        updated_at,
+        assessment_submissions (
+          id,
+          score,
+          severity,
+          created_at,
+          assessment_forms (
+            name,
+            title
+          )
+        ),
+        appointments (
+          id,
+          date,
+          time,
+          status,
+          type
+        )
+      `)
+      .eq('id', user_id)
+      .eq('college_id', req.tenant)
+      .single();
+
+    if (error) {
+      const formattedError = formatSupabaseError(error);
+      return errorResponse(res, formattedError.message, 404);
+    }
+
+    return successResponse(res, data, 'User details retrieved successfully');
+  } catch (error) {
+    console.error('Get user details error:', error);
+    return errorResponse(res, 'Failed to get user details', 500);
+  }
+};
+
+/**
+ * Create a new student account
+ * Admin can add students by providing their details
+ */
+export const createStudent = async (req, res) => {
+  try {
+    const { name, email, password, phone, year, branch, roll_no, bio } = req.body;
+    const collegeId = req.tenant;
+
+    // Check if email already exists
+    const { data: existingUser } = await supabase
+      .from('profiles')
+      .select('email')
+      .eq('email', email)
+      .single();
+
+    if (existingUser) {
+      return errorResponse(res, 'A user with this email already exists', 400);
+    }
+
+    // Check if roll_no already exists (if provided)
+    if (roll_no) {
+      const { data: existingRollNo } = await supabase
+        .from('students')
+        .select('roll_no')
+        .eq('roll_no', roll_no)
+        .single();
+
+      if (existingRollNo) {
+        return errorResponse(res, 'A student with this roll number already exists', 400);
+      }
+    }
+
+    // Create user in Supabase Auth
+    const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true // Auto-confirm the email
+    });
+
+    if (authError) {
+      console.error('Auth user creation error:', authError);
+      return errorResponse(res, `Failed to create user account: ${authError.message}`, 400);
+    }
+
+    // Create profile entry
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .insert({
+        id: authUser.user.id,
+        name,
+        email,
+        role: 'student',
+        college_id: collegeId,
+        phone: phone || null,
+        bio: bio || null
+      })
+      .select()
+      .single();
+
+    if (profileError) {
+      console.error('Profile creation error:', profileError);
+      // Rollback: Delete the auth user
+      await supabase.auth.admin.deleteUser(authUser.user.id);
+      return errorResponse(res, `Failed to create user profile: ${profileError.message}`, 400);
+    }
+
+    // Create student entry
+    const { data: student, error: studentError } = await supabase
+      .from('students')
+      .insert({
+        id: authUser.user.id,
+        year: year || null,
+        branch: branch || null,
+        roll_no: roll_no || null
+        // anonymous_username will be set by the student later
+      })
+      .select()
+      .single();
+
+    if (studentError) {
+      console.error('Student entry creation error:', studentError);
+      // Rollback: Delete profile and auth user
+      await supabase.from('profiles').delete().eq('id', authUser.user.id);
+      await supabase.auth.admin.deleteUser(authUser.user.id);
+      return errorResponse(res, `Failed to create student entry: ${studentError.message}`, 400);
+    }
+
+    return successResponse(res, {
+      id: authUser.user.id,
+      name,
+      email,
+      role: 'student',
+      year,
+      branch,
+      roll_no
+    }, 'Student created successfully', 201);
+  } catch (error) {
+    console.error('Create student error:', error);
+    return errorResponse(res, 'Failed to create student', 500);
+  }
+};
+
+/**
+ * Create a new counsellor account
+ * Admin can add counsellors by providing their details
+ */
+export const createCounsellor = async (req, res) => {
+  try {
+    const { name, email, password, phone, specialization, bio } = req.body;
+    const collegeId = req.tenant;
+
+    // Check if email already exists
+    const { data: existingUser } = await supabase
+      .from('profiles')
+      .select('email')
+      .eq('email', email)
+      .single();
+
+    if (existingUser) {
+      return errorResponse(res, 'A user with this email already exists', 400);
+    }
+
+    // Create user in Supabase Auth
+    const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true // Auto-confirm the email
+    });
+
+    if (authError) {
+      console.error('Auth user creation error:', authError);
+      return errorResponse(res, `Failed to create user account: ${authError.message}`, 400);
+    }
+
+    // Create profile entry
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .insert({
+        id: authUser.user.id,
+        name,
+        email,
+        role: 'counsellor',
+        college_id: collegeId,
+        phone: phone || null,
+        bio: bio || null
+      })
+      .select()
+      .single();
+
+    if (profileError) {
+      console.error('Profile creation error:', profileError);
+      // Rollback: Delete the auth user
+      await supabase.auth.admin.deleteUser(authUser.user.id);
+      return errorResponse(res, `Failed to create user profile: ${profileError.message}`, 400);
+    }
+
+    // Create counsellor entry
+    const { data: counsellor, error: counsellorError } = await supabase
+      .from('counsellors')
+      .insert({
+        id: authUser.user.id,
+        specialization: specialization || null
+      })
+      .select()
+      .single();
+
+    if (counsellorError) {
+      console.error('Counsellor entry creation error:', counsellorError);
+      // Rollback: Delete profile and auth user
+      await supabase.from('profiles').delete().eq('id', authUser.user.id);
+      await supabase.auth.admin.deleteUser(authUser.user.id);
+      return errorResponse(res, `Failed to create counsellor entry: ${counsellorError.message}`, 400);
+    }
+
+    return successResponse(res, {
+      id: authUser.user.id,
+      name,
+      email,
+      role: 'counsellor',
+      specialization
+    }, 'Counsellor created successfully', 201);
+  } catch (error) {
+    console.error('Create counsellor error:', error);
+    return errorResponse(res, 'Failed to create counsellor', 500);
+  }
+};
+
+/**
+ * Delete a user (student or counsellor)
+ * Admin can delete users from their college
+ */
+export const deleteUser = async (req, res) => {
+  try {
+    const { user_id } = req.params;
+    const collegeId = req.tenant;
+
+    // Verify user exists and belongs to the admin's college
+    const { data: user, error: userError } = await supabase
+      .from('profiles')
+      .select('id, role, college_id')
+      .eq('id', user_id)
+      .single();
+
+    if (userError || !user) {
+      return notFoundResponse(res, 'User not found');
+    }
+
+    if (user.college_id !== collegeId) {
+      return errorResponse(res, 'You do not have permission to delete this user', 403);
+    }
+
+    // Prevent deletion of admin and superadmin accounts
+    if (user.role === 'admin' || user.role === 'superadmin') {
+      return errorResponse(res, 'Cannot delete admin or superadmin accounts', 403);
+    }
+
+    // Delete role-specific entry first (student or counsellor)
+    if (user.role === 'student') {
+      await supabase.from('students').delete().eq('id', user_id);
+    } else if (user.role === 'counsellor') {
+      await supabase.from('counsellors').delete().eq('id', user_id);
+    }
+
+    // Delete profile
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .delete()
+      .eq('id', user_id);
+
+    if (profileError) {
+      console.error('Profile deletion error:', profileError);
+      return errorResponse(res, `Failed to delete user profile: ${profileError.message}`, 400);
+    }
+
+    // Delete from Supabase Auth
+    const { error: authError } = await supabase.auth.admin.deleteUser(user_id);
+
+    if (authError) {
+      console.error('Auth user deletion error:', authError);
+      // Profile is already deleted, but log the auth deletion failure
+      console.warn('User profile deleted but auth user deletion failed');
+    }
+
+    return successResponse(res, null, 'User deleted successfully');
+  } catch (error) {
+    console.error('Delete user error:', error);
+    return errorResponse(res, 'Failed to delete user', 500);
+  }
+};
+
+/**
+ * Change user password
+ * Admin can reset password for students and counsellors in their college
+ */
+export const changeUserPassword = async (req, res) => {
+  try {
+    const { user_id } = req.params;
+    const { new_password } = req.body;
+    const collegeId = req.tenant;
+
+    // Verify user exists and belongs to the admin's college
+    const { data: user, error: userError } = await supabase
+      .from('profiles')
+      .select('id, role, college_id, email')
+      .eq('id', user_id)
+      .single();
+
+    if (userError || !user) {
+      return notFoundResponse(res, 'User not found');
+    }
+
+    if (user.college_id !== collegeId) {
+      return errorResponse(res, 'You do not have permission to modify this user', 403);
+    }
+
+    // Prevent password change for admin and superadmin accounts
+    if (user.role === 'admin' || user.role === 'superadmin') {
+      return errorResponse(res, 'Cannot change password for admin or superadmin accounts', 403);
+    }
+
+    // Update password in Supabase Auth
+    const { data, error: authError } = await supabase.auth.admin.updateUserById(
+      user_id,
+      { password: new_password }
+    );
+
+    if (authError) {
+      console.error('Password update error:', authError);
+      return errorResponse(res, `Failed to update password: ${authError.message}`, 400);
+    }
+
+    return successResponse(res, null, 'Password updated successfully');
+  } catch (error) {
+    console.error('Change user password error:', error);
+    return errorResponse(res, 'Failed to change password', 500);
+  }
+};

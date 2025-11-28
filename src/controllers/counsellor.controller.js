@@ -160,7 +160,7 @@ export const getDashboardStats = async (req, res) => {
 
     return successResponse(res, stats, 'Dashboard stats retrieved successfully');
   } catch (error) {
-    console.error('❌ Get counsellor dashboard stats error:', error);
+    console.error('Get counsellor dashboard stats error:', error);
     return errorResponse(res, 'Failed to get dashboard stats', 500);
   }
 };
@@ -214,7 +214,7 @@ export const getAppointmentRequests = async (req, res) => {
 
     return successResponse(res, requests, 'Appointment requests retrieved successfully');
   } catch (error) {
-    console.error('❌ Get appointment requests error:', error);
+    console.error('Get appointment requests error:', error);
     return errorResponse(res, 'Failed to get appointment requests', 500);
   }
 };
@@ -261,7 +261,7 @@ export const acceptAppointmentRequest = async (req, res) => {
 
     return successResponse(res, data, 'Appointment request accepted successfully');
   } catch (error) {
-    console.error('❌ Accept appointment request error:', error);
+    console.error('Accept appointment request error:', error);
     return errorResponse(res, 'Failed to accept appointment request', 500);
   }
 };
@@ -356,7 +356,7 @@ export const addAvailability = async (req, res) => {
 
     return successResponse(res, data, 'Availability added successfully', 201);
   } catch (error) {
-    console.error('❌ Add availability error:', error);
+    console.error('Add availability error:', error);
     return errorResponse(res, 'Failed to add availability', 500);
   }
 };
@@ -419,7 +419,7 @@ export const getSessions = async (req, res) => {
 
     return successResponse(res, sessions, 'Sessions retrieved successfully');
   } catch (error) {
-    console.error('❌ Get sessions error:', error);
+    console.error('Get sessions error:', error);
     return errorResponse(res, 'Failed to get sessions', 500);
   }
 };
@@ -473,7 +473,7 @@ export const getSessionsSummary = async (req, res) => {
 
     return successResponse(res, summary, 'Sessions summary retrieved successfully');
   } catch (error) {
-    console.error('❌ Get sessions summary error:', error);
+    console.error('Get sessions summary error:', error);
     return errorResponse(res, 'Failed to get sessions summary', 500);
   }
 };

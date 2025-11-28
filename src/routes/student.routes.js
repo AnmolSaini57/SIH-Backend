@@ -28,13 +28,49 @@ const router = express.Router();
  * All routes require authentication and student role
  */
 
-// Profile management
+//////////////////////// PROFILE MANAGEMENT /////////////////////////////
 router.get('/profile', getProfile);
 
 router.put('/profile', 
   validate(userSchemas.updateProfile), 
   updateProfile
 );
+
+//////////////////////// APPPOINTMENT MANAGEMENT /////////////////////////////
+
+router.post('/appointments', 
+  validate(appointmentSchemas.createAppointment), 
+  bookAppointment
+);
+
+// Counsellors with availability for a given date
+router.get('/college-counsellors', getCollegeCounsellorsWithAvailability);
+
+// All appointments for the logged in student (no pagination)
+router.get('/my-appointments', getMyAppointments);
+
+// Completed sessions summary with session notes and goals
+router.get('/sessions-summary', getSessionsSummary);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // Assessment management
 router.get('/assessments', 
@@ -58,18 +94,9 @@ router.post('/communities/:community_id/join',
   joinCommunity
 );
 
-router.post('/appointments', 
-  validate(appointmentSchemas.createAppointment), 
-  bookAppointment
-);
-
-// Counsellors with availability for a given date
-router.get('/college-counsellors', getCollegeCounsellorsWithAvailability);
-
-// All appointments for the logged in student (no pagination)
-router.get('/my-appointments', getMyAppointments);
-
-// Completed sessions summary with session notes and goals
-router.get('/sessions-summary', getSessionsSummary);
-
 export default router;
+
+
+
+
+

@@ -245,7 +245,7 @@ export const getResourceStats = async (req, res) => {
 
     return successResponse(res, stats, 'Resource statistics retrieved successfully');
   } catch (error) {
-    console.error('❌ Get resource stats error:', error);
+    console.error('Get resource stats error:', error);
     return errorResponse(res, error.message || 'Failed to get resource statistics', 500);
   }
 };

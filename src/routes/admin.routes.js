@@ -3,6 +3,10 @@ import {
   getDashboardStats,
   getUsers,
   getUserDetails,
+  createStudent,
+  createCounsellor,
+  deleteUser,
+  changeUserPassword,
   createAnnouncement,
   getAnnouncements,
   updateAnnouncement,
@@ -20,16 +24,15 @@ import {
 
 const router = express.Router();
 
-/**
- * Admin Routes
- * Base path: /api/admin
- * All routes require authentication and admin role
- */
+
+ // Admin Routes
+ // Base path: /api/admin
+ // All routes require authentication and admin role
 
 // Dashboard
 router.get('/dashboard/stats', getDashboardStats);
 
-// User management
+/////////////// USER MANAGEMENT /////////////////////
 router.get('/users', 
   validatePagination, 
   getUsers
@@ -39,6 +42,32 @@ router.get('/users/:user_id',
   validateUUID('user_id'), 
   getUserDetails
 );
+
+// Create student
+router.post('/users/students',
+  validate(adminSchemas.createStudent),
+  createStudent
+);
+
+// Create counsellor
+router.post('/users/counsellors',
+  validate(adminSchemas.createCounsellor),
+  createCounsellor
+);
+
+// Delete user
+router.delete('/users/:user_id',
+  validateUUID('user_id'),
+  deleteUser
+);
+
+// Change user password
+router.put('/users/:user_id/password',
+  validateUUID('user_id'),
+  validate(adminSchemas.changeUserPassword),
+  changeUserPassword
+);
+
 
 // Announcement management
 router.post('/announcements', 

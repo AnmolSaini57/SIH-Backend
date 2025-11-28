@@ -38,7 +38,7 @@ const router = express.Router();
 // Base path: /api/counsellor
 // All routes require authentication and counsellor role
 
-// Profile management
+//////////////// PROFILE MANAGEMENT /////////////////////////////
 router.get('/profile', getProfile);
 
 router.put('/profile', 
@@ -48,6 +48,9 @@ router.put('/profile',
 
 // Dashboard
 router.get('/dashboard/stats', getDashboardStats);
+
+
+/////////////////// APPOINTMENT MANAGEMENT ///////////////////////////////
 
 router.get('/appointment-requests', getAppointmentRequests);
 
@@ -80,8 +83,7 @@ router.put('/sessions-summary/:appointment_id',
 );
 
 
-// Resource management
-
+/////////////////// RESOURCE MANAGEMENT ///////////////////////////////
 
 // Get resource statistics
 router.get('/resources/stats', getResourceStats);

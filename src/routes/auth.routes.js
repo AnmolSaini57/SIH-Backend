@@ -3,18 +3,15 @@ import {
   login,
   register,
   logout,
-  getMe,
-  updateProfile,
   changePassword,
-  requestPasswordReset,
-  refreshToken
+  requestPasswordReset
 } from '../controllers/auth.controller.js';
 import { validate, authSchemas } from '../utils/validators.js';
-import { optionalAuth } from '../middleware/auth.js';
+import auth from '../middleware/auth.js';
 
 const router = express.Router();
 
-/**
+/*
  * Authentication Routes
  * Base path: /api/auth
  */
@@ -38,22 +35,11 @@ router.post('/request-password-reset',
 );
 
 // Protected routes (require authentication)
-router.get('/me', optionalAuth, getMe);
-
-router.put('/profile', 
-  optionalAuth, 
-  updateProfile
-);
 
 router.post('/change-password', 
-  optionalAuth, 
+  auth, 
   validate(authSchemas.changePassword), 
   changePassword
-);
-
-router.post('/refresh', 
-  optionalAuth, 
-  refreshToken
 );
 
 export default router;
