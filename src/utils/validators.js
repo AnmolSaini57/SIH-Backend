@@ -88,33 +88,6 @@ export const userSchemas = {
   })
 };
 
-// Assessment schemas
-export const assessmentSchemas = {
-  submitAssessment: Joi.object({
-    form_id: Joi.string().required(),
-    responses: Joi.object().required(),
-    session_id: Joi.string().uuid().optional()
-  }),
-  
-  createAssessmentForm: Joi.object({
-    name: Joi.string().min(3).max(100).required(),
-    title: Joi.string().min(3).max(200).required(),
-    description: Joi.string().max(1000).required(),
-    questions: Joi.array().items(
-      Joi.object({
-        id: Joi.string().required(),
-        text: Joi.string().required(),
-        type: Joi.string().valid('likert', 'multiple-choice', 'text', 'scale').required(),
-        options: Joi.array().when('type', {
-          is: Joi.string().valid('likert', 'multiple-choice'),
-          then: Joi.required(),
-          otherwise: Joi.optional()
-        })
-      })
-    ).min(1).required()
-  })
-};
-
 // Community schemas
 export const communitySchemas = {
   createCommunity: Joi.object({
@@ -310,7 +283,6 @@ export const customValidators = {
 export default {
   authSchemas,
   userSchemas,
-  assessmentSchemas,
   communitySchemas,
   appointmentSchemas,
   availabilitySchemas,

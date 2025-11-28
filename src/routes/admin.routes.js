@@ -11,7 +11,6 @@ import {
   getAnnouncements,
   updateAnnouncement,
   deleteAnnouncement,
-  getAssessmentAnalytics,
   getCommunities,
   generateReport
 } from '../controllers/admin.controller.js';
@@ -89,11 +88,6 @@ router.put('/announcements/:announcement_id',
 router.delete('/announcements/:announcement_id', 
   validateUUID('announcement_id'), 
   deleteAnnouncement
-);
-
-// Analytics
-router.get('/analytics/assessments', 
-  getAssessmentAnalytics
 );
 
 // Community management

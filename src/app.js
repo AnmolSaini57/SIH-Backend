@@ -83,7 +83,7 @@ app.get('/health', (req, res) => {
   });
 });
 
-// API routes with targeted rate limiting
+// API routes rate limiting
 app.use("/api/auth", authLimiter, authRoutes);
 
 // Protected routes with middleware chains
@@ -92,7 +92,7 @@ app.use("/api/counsellor", auth, role("counsellor"), tenant, counsellorRoutes);
 app.use("/api/admin", auth, role("admin"), tenant, adminRoutes);
 app.use("/api/superadmin", auth, role("superadmin"), superadminRoutes);
 
-// Welcome route
+
 app.get('/', (req, res) => {
   res.json({
     message: 'SIH Mental Health Platform Backend',

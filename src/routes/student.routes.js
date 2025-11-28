@@ -2,8 +2,6 @@ import express from 'express';
 import {
   getProfile,
   updateProfile,
-  getAssessments,
-  submitAssessment,
   getCommunities,
   joinCommunity,
   bookAppointment,
@@ -11,12 +9,18 @@ import {
   getMyAppointments,
   getSessionsSummary
 } from '../controllers/student.controller.js';
+import {
+  submitAssessmentController,
+  getAssessmentHistoryController,
+  getAssessmentByIdController,
+  getAssessmentStatsController,
+  getAvailableAssessments
+} from '../controllers/assessment.controller.js';
 import { 
   validate, 
   validatePagination,
   validateUUID,
   userSchemas,
-  assessmentSchemas,
   appointmentSchemas
 } from '../utils/validators.js';
 
@@ -69,20 +73,6 @@ router.get('/sessions-summary', getSessionsSummary);
 
 
 
-
-
-
-// Assessment management
-router.get('/assessments', 
-  validatePagination, 
-  getAssessments
-);
-
-router.post('/assessments', 
-  validate(assessmentSchemas.submitAssessment), 
-  submitAssessment
-);
-
 // Community management
 router.get('/communities', 
   validatePagination, 
@@ -93,6 +83,23 @@ router.post('/communities/:community_id/join',
   validateUUID('community_id'), 
   joinCommunity
 );
+
+//////////////////////// ASSESSMENT MANAGEMENT /////////////////////////////
+
+// Get available assessment forms
+router.get('/assessments/available', getAvailableAssessments);
+
+// Get assessment statistics
+router.get('/assessments/stats', getAssessmentStatsController);
+
+// Get assessment history (with optional filters)
+router.get('/assessments', getAssessmentHistoryController);
+
+// Get single assessment by ID
+router.get('/assessments/:id', getAssessmentByIdController);
+
+// Submit a new assessment
+router.post('/assessments', submitAssessmentController);
 
 export default router;
 
