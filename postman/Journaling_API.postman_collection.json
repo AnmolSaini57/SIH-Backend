@@ -1,0 +1,420 @@
+{
+  "info": {
+    "name": "Student Journaling API",
+    "description": "Complete API collection for student mental health journaling system. Uses httpOnly cookies for authentication. Login first to set cookies.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "journaling-api-collection",
+    "version": "1.0.0"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5000/api/student/journal",
+      "type": "string"
+    },
+    {
+      "key": "auth_url",
+      "value": "http://localhost:5000/api/auth",
+      "type": "string"
+    },
+    {
+      "key": "test_date",
+      "value": "2025-11-29",
+      "type": "string"
+    },
+    {
+      "key": "daily_checkin_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "weekly_checkin_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "worry_entry_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login (Set Cookies)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Cookies are automatically set by the server",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Cookies are set\", function () {",
+                  "    pm.expect(pm.cookies.has('sb-access-token')).to.be.true;",
+                  "    pm.expect(pm.cookies.has('sb-refresh-token')).to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{auth_url}}/login",
+              "host": ["{{auth_url}}"],
+              "path": ["login"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"student@example.com\",\n  \"password\": \"your_password\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Logout (Clear Cookies)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{auth_url}}/logout",
+              "host": ["{{auth_url}}"],
+              "path": ["logout"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Daily Check-ins",
+      "item": [
+        {
+          "name": "Create/Update Daily Check-in",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/daily",
+              "host": ["{{base_url}}"],
+              "path": ["daily"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"date\": \"{{test_date}}\",\n  \"positive_moments\": [\n    \"Had a great conversation with a friend\",\n    \"Finished my assignment early\",\n    \"Enjoyed a peaceful morning walk\"\n  ],\n  \"challenges_faced\": [\n    \"Felt anxious before the exam\",\n    \"Had trouble sleeping last night\"\n  ],\n  \"todays_reflection\": \"Overall it was a productive day despite some anxiety. I'm learning to manage my stress better.\",\n  \"intentions_tomorrow\": [\n    \"Wake up early and meditate\",\n    \"Complete math homework\",\n    \"Call my family\"\n  ],\n  \"feelings_space\": \"I'm feeling hopeful but also a bit nervous about tomorrow's presentation. Taking it one step at a time.\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Daily Check-in by Date",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/daily/{{test_date}}",
+              "host": ["{{base_url}}"],
+              "path": ["daily", "{{test_date}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Daily Check-in",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/daily/{{daily_checkin_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["daily", "{{daily_checkin_id}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Weekly Check-ins",
+      "item": [
+        {
+          "name": "Create/Update Weekly Check-in",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/weekly",
+              "host": ["{{base_url}}"],
+              "path": ["weekly"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"date\": \"{{test_date}}\",\n  \"week_reflection\": \"This week was challenging but rewarding. I managed to balance studies and self-care. Made progress on my projects and connected with friends more often.\",\n  \"next_week_intentions\": [\n    \"Start the week with a morning routine\",\n    \"Complete all assignments on time\",\n    \"Exercise at least 3 times\",\n    \"Connect with friends at least twice\"\n  ],\n  \"self_care_score\": 7,\n  \"self_care_reflection\": \"I did well with sleep (7-8 hours most nights) and exercise (3 times this week). However, nutrition needs improvement. I want to be more mindful about meal planning.\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Weekly Check-in by Date",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/weekly/{{test_date}}",
+              "host": ["{{base_url}}"],
+              "path": ["weekly", "{{test_date}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Weekly Check-in",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/weekly/{{weekly_checkin_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["weekly", "{{weekly_checkin_id}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Worries Journal",
+      "item": [
+        {
+          "name": "Create Worry Entry",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/worries",
+              "host": ["{{base_url}}"],
+              "path": ["worries"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"date\": \"{{test_date}}\",\n  \"whats_on_mind\": \"I'm really worried about failing my upcoming exam. I feel like I haven't studied enough and everyone else seems more prepared than me. What if I let my parents down?\"\n}"
+            }
+          },
+          "response": []
+        },
+        
+        {
+          "name": "Update Worry Entry",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/worries/{{worry_entry_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["worries", "{{worry_entry_id}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"whats_on_mind\": \"Updated worry text\",\n  \"positive_reframe\": \"My own positive perspective\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Worry Entries by Date",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/worries/{{test_date}}",
+              "host": ["{{base_url}}"],
+              "path": ["worries", "{{test_date}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Worry Entry",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/worries/{{worry_entry_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["worries", "{{worry_entry_id}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "AI Preview Reframe",
+      "description": "Endpoints for generating a positive reframe BEFORE saving a worry. Model mirrors input language (English / Hindi / Urdu / Hinglish).",
+      "item": [
+        {
+          "name": "Preview Reframe (Ephemeral)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/worries/reframe",
+              "host": ["{{base_url}}"],
+              "path": ["worries","reframe"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"whats_on_mind\": \"I am anxious about my exam performance and feel underprepared.\",\n  \"save\": false\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Preview Reframe & Save (English)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/worries/reframe",
+              "host": ["{{base_url}}"],
+              "path": ["worries","reframe"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"whats_on_mind\": \"I feel stressed balancing classes and project deadlines.\",\n  \"date\": \"{{test_date}}\",\n  \"save\": true\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Preview Reframe & Save (Update Existing by id)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/worries/reframe",
+              "host": ["{{base_url}}"],
+              "path": ["worries","reframe"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{worry_entry_id}}\",\n  \"whats_on_mind\": \"Reframe this existing worry in place.\",\n  \"save\": true\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Preview Reframe & Save (Hinglish)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/worries/reframe",
+              "host": ["{{base_url}}"],
+              "path": ["worries","reframe"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"whats_on_mind\": \"Kal ka exam hai aur preparation thodi kam lag rahi hai, stress ho raha hai.\",\n  \"date\": \"{{test_date}}\",\n  \"save\": true\n}"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Calendar & Combined",
+      "item": [
+        {
+          "name": "Get All Journals for Date (Calendar)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/date/{{test_date}}",
+              "host": ["{{base_url}}"],
+              "path": ["date", "{{test_date}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Journal Range",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/range?start_date=2025-11-01&end_date=2025-11-30",
+              "host": ["{{base_url}}"],
+              "path": ["range"],
+              "query": [
+                {
+                  "key": "start_date",
+                  "value": "2025-11-01"
+                },
+                {
+                  "key": "end_date",
+                  "value": "2025-11-30"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Journal Statistics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/stats",
+              "host": ["{{base_url}}"],
+              "path": ["stats"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

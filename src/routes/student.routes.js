@@ -23,6 +23,7 @@ import {
   userSchemas,
   appointmentSchemas
 } from '../utils/validators.js';
+import journalingRoutes from './journaling.routes.js';
 
 const router = express.Router();
 
@@ -100,6 +101,11 @@ router.get('/assessments/:id', getAssessmentByIdController);
 
 // Submit a new assessment
 router.post('/assessments', submitAssessmentController);
+
+//////////////////////// JOURNALING /////////////////////////////
+
+// Mount journaling routes under /journal
+router.use('/journal', journalingRoutes);
 
 export default router;
 
