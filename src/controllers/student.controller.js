@@ -525,3 +525,58 @@ export const joinCommunity = async (req, res) => {
     return errorResponse(res, 'Failed to join community', 500);
   }
 };
+
+
+///////////////////// MESSAGING /////////////////////////
+
+/**
+ * Get all counsellors from student's college for messaging
+ * Route: GET /api/student/counsellors-for-messaging
+ * Returns: List of counsellors with basic details (id, name, email, avatar_url, bio, phone, specialization)
+ */
+export const getCollegeCounsellorsForMessaging = async (req, res) => {
+  try {
+    // Get all counsellors in this college
+    const { data: counsellors, error: counsellorsError } = await supabase
+      .from('profiles')
+      .select(`
+        id,
+        name,
+        email,
+        avatar_url,
+        bio,
+        phone,
+        counsellors (
+          specialization
+        )
+      `)
+      .eq('role', 'counsellor')
+      .eq('college_id', req.tenant)
+      .order('name', { ascending: true });
+
+    if (counsellorsError) {
+      const formattedError = formatSupabaseError(counsellorsError);
+      return errorResponse(res, formattedError.message, 400);
+    }
+
+    if (!counsellors || counsellors.length === 0) {
+      return successResponse(res, [], 'No counsellors found for this college');
+    }
+
+    // Format the response
+    const result = counsellors.map(c => ({
+      id: c.id,
+      name: c.name,
+      email: c.email,
+      avatar_url: c.avatar_url,
+      bio: c.bio,
+      phone: c.phone,
+      specialization: c.counsellors?.specialization || null
+    }));
+
+    return successResponse(res, result, 'Counsellors retrieved successfully');
+  } catch (error) {
+    console.error('Get college counsellors for messaging error:', error);
+    return errorResponse(res, 'Failed to get counsellors', 500);
+  }
+};

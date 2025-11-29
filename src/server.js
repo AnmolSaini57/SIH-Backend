@@ -1,14 +1,28 @@
+import { createServer } from 'http';
 import app from "./app.js";
 import dotenv from "dotenv";
+import { initializeSocketIO } from './config/socket.js';
+import { initializeSocketHandlers } from './sockets/messaging.socket.js';
 
 // Load environment variables
 dotenv.config();
 
 const PORT = process.env.PORT || 5000;
 
+// Create HTTP server
+const httpServer = createServer(app);
+
+// Initialize Socket.io
+const io = initializeSocketIO(httpServer);
+initializeSocketHandlers(io);
+
+// Make io accessible to routes via app
+app.set('io', io);
+
 // Start the server
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
   console.log(`SIH Backend running on port ${PORT}`);
+  console.log(`Socket.io server ready for connections`);
 });
 
 // Graceful shutdown

@@ -20,6 +20,14 @@ import {
   getDownloadUrl,
   getResourceStats
 } from '../controllers/resources.controller.js';
+import {
+  getCounsellorConversationsController,
+  getConversationMessagesController,
+  markMessagesAsReadController,
+  getUnreadCountController,
+  getConversationByIdController,
+  deleteConversationController
+} from '../controllers/messaging.controller.js';
 import { 
   validate, 
   validatePagination,
@@ -108,6 +116,38 @@ router.delete('/resources/:id', validateUUID('id'), deleteResource);
 
 // Generate download URL for resource
 router.get('/resources/:id/download', validateUUID('id'), getDownloadUrl);
+
+//////////////////////// MESSAGING /////////////////////////////
+
+// Get all conversations for the counsellor
+router.get('/conversations', getCounsellorConversationsController);
+
+// Get a specific conversation
+router.get('/conversations/:id', 
+  validateUUID('id'), 
+  getConversationByIdController
+);
+
+// Get messages in a conversation (with pagination)
+router.get('/conversations/:id/messages',
+  validateUUID('id'),
+  getConversationMessagesController
+);
+
+// Mark messages as read in a conversation
+router.put('/conversations/:id/read',
+  validateUUID('id'),
+  markMessagesAsReadController
+);
+
+// Delete a conversation
+router.delete('/conversations/:id',
+  validateUUID('id'),
+  deleteConversationController
+);
+
+// Get total unread message count
+router.get('/messages/unread-count', getUnreadCountController);
 
 
 export default router;

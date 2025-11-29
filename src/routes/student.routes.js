@@ -7,7 +7,8 @@ import {
   bookAppointment,
   getCollegeCounsellorsWithAvailability,
   getMyAppointments,
-  getSessionsSummary
+  getSessionsSummary,
+  getCollegeCounsellorsForMessaging
 } from '../controllers/student.controller.js';
 import {
   submitAssessmentController,
@@ -16,6 +17,15 @@ import {
   getAssessmentStatsController,
   getAvailableAssessments
 } from '../controllers/assessment.controller.js';
+import {
+  createConversationController,
+  getStudentConversationsController,
+  getConversationMessagesController,
+  markMessagesAsReadController,
+  getUnreadCountController,
+  getConversationByIdController,
+  deleteConversationController
+} from '../controllers/messaging.controller.js';
 import { 
   validate, 
   validatePagination,
@@ -23,7 +33,6 @@ import {
   userSchemas,
   appointmentSchemas
 } from '../utils/validators.js';
-import journalingRoutes from './journaling.routes.js';
 
 const router = express.Router();
 
@@ -56,6 +65,45 @@ router.get('/my-appointments', getMyAppointments);
 
 // Completed sessions summary with session notes and goals
 router.get('/sessions-summary', getSessionsSummary);
+
+//////////////////////// MESSAGING /////////////////////////////
+
+// Get all counsellors from student's college for messaging
+router.get('/counsellors-for-messaging', getCollegeCounsellorsForMessaging);
+
+// Get all conversations for the student
+router.get('/conversations', getStudentConversationsController);
+
+// Create or get conversation with a counsellor
+router.post('/conversations', createConversationController);
+
+// Get a specific conversation
+router.get('/conversations/:id', 
+  validateUUID('id'), 
+  getConversationByIdController
+);
+
+// Get messages in a conversation (with pagination)
+router.get('/conversations/:id/messages',
+  validateUUID('id'),
+  getConversationMessagesController
+);
+
+// Mark messages as read in a conversation
+router.put('/conversations/:id/read',
+  validateUUID('id'),
+  markMessagesAsReadController
+);
+
+// Delete a conversation
+router.delete('/conversations/:id',
+  validateUUID('id'),
+  deleteConversationController
+);
+
+// Get total unread message count
+router.get('/messages/unread-count', getUnreadCountController);
+
 
 
 
@@ -101,11 +149,6 @@ router.get('/assessments/:id', getAssessmentByIdController);
 
 // Submit a new assessment
 router.post('/assessments', submitAssessmentController);
-
-//////////////////////// JOURNALING /////////////////////////////
-
-// Mount journaling routes under /journal
-router.use('/journal', journalingRoutes);
 
 export default router;
 
