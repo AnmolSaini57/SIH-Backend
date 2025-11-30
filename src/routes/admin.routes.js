@@ -97,35 +97,44 @@ router.delete('/announcements/:announcement_id',
   deleteAnnouncement
 );
 
-// Community management (OLD - TO BE REPLACED)
-// router.get('/communities', 
-//   validatePagination, 
-//   getCommunities
-// );
-
-// Community creation and stats (Admin)
-// router.post('/communities', 
-//   validate(communitySchemas.createCommunity),
-//   adminCreateCommunityController
-// );
-
-// router.get('/communities/stats', adminCommunityStatsController);
-
-// router.get('/communities/:id/messages', 
-//   validateUUID('id'),
-//   getCommunityMessagesController
-// );
-
-// router.post('/communities/:id/messages', 
-//   validateUUID('id'),
-//   validate(communitySchemas.postMessage),
-//   postCommunityMessageController
-// );
-
 //////////////////////// COMMUNITY MANAGEMENT /////////////////////////////
-// Import community routes
-import communityRoutes from './community.routes.js';
-router.use('/communities', communityRoutes);
+import communityController from '../controllers/community.controller.js';
+
+// Get community statistics
+router.get('/communities/statistics', communityController.getAdminStatistics);
+
+// Get all communities
+router.get('/communities', communityController.getAdminCommunities);
+
+// Get single community details
+router.get('/communities/:communityId', 
+  validateUUID('communityId'), 
+  communityController.getCommunityDetails
+);
+
+// Create a new community
+router.post('/communities', communityController.createCommunity);
+
+// Update a community
+router.put('/communities/:communityId', 
+  validateUUID('communityId'), 
+  communityController.updateCommunity
+);
+
+// Delete a community
+router.delete('/communities/:communityId', 
+  validateUUID('communityId'), 
+  communityController.deleteCommunity
+);
+
+// Get messages from a specific community
+router.get('/communities/:communityId/messages', 
+  validateUUID('communityId'), 
+  communityController.getAdminCommunityMessages
+);
+
+
+
 
 // Reports
 router.get('/reports', 

@@ -1,9 +1,5 @@
+import { addCommunityTypingUser, removeCommunityTypingUser, getCommunityTypingUsers } from '../config/socket.js';
 import communityService from '../services/community.service.js';
-
-/**
- * Community Socket Handler
- * Handles real-time messaging for anonymous community chatrooms
- */
 
 /**
  * Initialize community socket handlers
@@ -181,47 +177,80 @@ export const initializeCommunitySocket = (io) => {
       }
     });
 
+
     /**
      * User is typing indicator
      * Event: 'typing'
      * Data: { communityId: string }
      */
+
     socket.on('typing', async ({ communityId }) => {
       try {
         if (socket.currentCommunity !== communityId) {
           return;
         }
-
+        addCommunityTypingUser(communityId, userId);
+        let displayName = null;
+        if (userRole === 'student') {
+          // Get anonymous username from DB
+          const { data: student } = await communityService.supabase
+            .from('students')
+            .select('anonymous_username')
+            .eq('id', userId)
+            .single();
+          displayName = student?.anonymous_username || 'Anonymous';
+        } else {
+          // Get real name from profile
+          const { data: profile } = await communityService.supabase
+            .from('profiles')
+            .select('name')
+            .eq('id', userId)
+            .single();
+          displayName = profile?.name || 'Unknown';
+        }
         const roomName = `community:${communityId}`;
-        socket.to(roomName).emit('user-typing', {
-          userId: userRole === 'student' ? 'anonymous' : userId,
-          role: userRole,
+        socket.to(roomName).emit('user_typing', {
           communityId,
+          userId,
+          role: userRole,
+          username: displayName
         });
       } catch (error) {
         console.error('[Community] Error handling typing event:', error);
       }
     });
 
-    /**
-     * User stopped typing indicator
-     * Event: 'stop-typing'
-     * Data: { communityId: string }
-     */
-    socket.on('stop-typing', async ({ communityId }) => {
+    socket.on('stop_typing', async ({ communityId }) => {
       try {
         if (socket.currentCommunity !== communityId) {
           return;
         }
-
+        removeCommunityTypingUser(communityId, userId);
+        let displayName = null;
+        if (userRole === 'student') {
+          const { data: student } = await communityService.supabase
+            .from('students')
+            .select('anonymous_username')
+            .eq('id', userId)
+            .single();
+          displayName = student?.anonymous_username || 'Anonymous';
+        } else {
+          const { data: profile } = await communityService.supabase
+            .from('profiles')
+            .select('name')
+            .eq('id', userId)
+            .single();
+          displayName = profile?.name || 'Unknown';
+        }
         const roomName = `community:${communityId}`;
-        socket.to(roomName).emit('user-stop-typing', {
-          userId: userRole === 'student' ? 'anonymous' : userId,
-          role: userRole,
+        socket.to(roomName).emit('user_stopped_typing', {
           communityId,
+          userId,
+          role: userRole,
+          username: displayName
         });
       } catch (error) {
-        console.error('[Community] Error handling stop-typing event:', error);
+        console.error('[Community] Error handling stop typing event:', error);
       }
     });
 

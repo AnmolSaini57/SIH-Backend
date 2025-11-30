@@ -105,9 +105,35 @@ router.delete('/conversations/:id',
 router.get('/messages/unread-count', getUnreadCountController);
 
 //////////////////////// COMMUNITY MANAGEMENT /////////////////////////////
-// Import community routes
-import communityRoutes from './community.routes.js';
-router.use('/communities', communityRoutes);
+// Import community controller for student-specific endpoints
+import communityController from '../controllers/community.controller.js';
+
+// Get all communities (joined and available)
+router.get('/communities/all', communityController.getStudentCommunities);
+
+// Get joined communities only
+router.get('/communities/joined', communityController.getStudentJoinedCommunities);
+
+// Get available (not joined) communities only
+router.get('/communities/available', communityController.getStudentAvailableCommunities);
+
+// Join a community
+router.post('/communities/:communityId/join', 
+  validateUUID('communityId'), 
+  communityController.joinCommunity
+);
+
+// Leave a community
+router.delete('/communities/:communityId/leave', 
+  validateUUID('communityId'), 
+  communityController.leaveCommunity
+);
+
+// Get messages from a specific community
+router.get('/communities/:communityId/messages', 
+  validateUUID('communityId'), 
+  communityController.getStudentCommunityMessages
+);
 
 //////////////////////// ASSESSMENT MANAGEMENT /////////////////////////////
 

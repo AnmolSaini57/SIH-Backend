@@ -150,8 +150,34 @@ router.delete('/conversations/:id',
 router.get('/messages/unread-count', getUnreadCountController);
 
 //////////////////////// COMMUNITY MANAGEMENT /////////////////////////////
-// Import community routes
-import communityRoutes from './community.routes.js';
-router.use('/communities', communityRoutes);
+// Import community controller for counsellor-specific endpoints
+import communityController from '../controllers/community.controller.js';
+
+// Get all communities (joined and available)
+router.get('/communities/all', communityController.getCounsellorCommunities);
+
+// Get joined communities only
+router.get('/communities/joined', communityController.getCounsellorJoinedCommunities);
+
+// Get available (not joined) communities only
+router.get('/communities/available', communityController.getCounsellorAvailableCommunities);
+
+// Join a community
+router.post('/communities/:communityId/join', 
+  validateUUID('communityId'), 
+  communityController.counsellorJoinCommunity
+);
+
+// Leave a community
+router.delete('/communities/:communityId/leave', 
+  validateUUID('communityId'), 
+  communityController.counsellorLeaveCommunity
+);
+
+// Get messages from a specific community
+router.get('/communities/:communityId/messages', 
+  validateUUID('communityId'), 
+  communityController.getCounsellorCommunityMessages
+);
 
 export default router;

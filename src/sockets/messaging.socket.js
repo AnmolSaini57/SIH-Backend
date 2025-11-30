@@ -140,10 +140,11 @@ export const initializeSocketHandlers = (io) => {
 
         // Clear typing status
         removeTypingUser(conversation_id, userId);
-        io.to(`conversation:${conversation_id}`).emit('user_stopped_typing', {
-          conversation_id,
-          user_id: userId
-        });
+          io.to(`conversation:${conversation_id}`).emit('user_stopped_typing', {
+            conversation_id,
+            user_id: userId,
+            user_name: userName
+          });
 
         // Emit message to all users in the conversation
         io.to(`conversation:${conversation_id}`).emit('new_message', {

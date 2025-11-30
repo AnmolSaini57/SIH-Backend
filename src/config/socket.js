@@ -146,3 +146,30 @@ export const removeTypingUser = (conversationId, userId) => {
 export const getTypingUsers = (conversationId) => {
   return Array.from(typingUsers.get(conversationId) || new Set());
 };
+
+
+
+// Store for community typing indicators
+// Structure: { communityId: Set of user IDs currently typing }
+export const communityTypingUsers = new Map();
+
+export const addCommunityTypingUser = (communityId, userId) => {
+  if (!communityTypingUsers.has(communityId)) {
+    communityTypingUsers.set(communityId, new Set());
+  }
+  communityTypingUsers.get(communityId).add(userId);
+};
+
+export const removeCommunityTypingUser = (communityId, userId) => {
+  if (communityTypingUsers.has(communityId)) {
+    const typing = communityTypingUsers.get(communityId);
+    typing.delete(userId);
+    if (typing.size === 0) {
+      communityTypingUsers.delete(communityId);
+    }
+  }
+};
+
+export const getCommunityTypingUsers = (communityId) => {
+  return Array.from(communityTypingUsers.get(communityId) || new Set());
+};
