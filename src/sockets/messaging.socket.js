@@ -11,7 +11,8 @@ import {
   getUserSocketIds,
   addTypingUser,
   removeTypingUser,
-  getTypingUsers
+  getTypingUsers,
+  typingUsers
 } from '../config/socket.js';
 
 /**
@@ -296,7 +297,21 @@ export const initializeSocketHandlers = (io) => {
       // Check if user is still online on another device
       const stillOnline = isUserOnline(userId);
       
+      // Clean up typing indicators ONLY if user is completely offline
+      // (no other devices still connected)
       if (!stillOnline) {
+        // Remove typing status from all conversations this user was typing in
+        typingUsers.forEach((users, conversationId) => {
+          if (users.has(userId)) {
+            users.delete(userId);
+            // Notify other users in the conversation
+            io.to(`conversation:${conversationId}`).emit('user_stopped_typing', {
+              conversation_id: conversationId,
+              user_id: userId
+            });
+          }
+        });
+        
         // Notify all conversations that the user is offline
         io.emit('user_offline', {
           user_id: userId,
