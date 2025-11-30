@@ -1,7 +1,8 @@
 import {
   createMessage,
   markMessagesAsRead,
-  getConversationById
+  getConversationById,
+  getUnreadMessageCount
 } from '../services/messaging.service.js';
 import {
   addActiveUser,
@@ -54,7 +55,7 @@ export const initializeSocketHandlers = (io) => {
         socket.join(`conversation:${conversation_id}`);
         
         // Automatically mark messages as read when user joins/views conversation
-        await markMessagesAsRead(conversation_id, userId);
+        const { data: readMessages } = await markMessagesAsRead(conversation_id, userId);
         
         console.log(`User ${userName} joined conversation ${conversation_id}`);
         
@@ -72,6 +73,14 @@ export const initializeSocketHandlers = (io) => {
           conversation_id,
           reader_id: userId
         });
+
+        // Update unread count for the user who joined (if messages were marked as read)
+        if (readMessages && readMessages.length > 0) {
+          const { data: unreadData } = await getUnreadMessageCount(userId);
+          socket.emit('unread_count_updated', {
+            count: unreadData?.count || 0
+          });
+        }
 
         // Check if the other user is online
         const isOnline = isUserOnline(otherUserId);
@@ -152,6 +161,12 @@ export const initializeSocketHandlers = (io) => {
           }
         });
 
+        // Update unread count for receiver (increment by 1)
+        const { data: receiverUnreadData } = await getUnreadMessageCount(receiver_id);
+        io.to(`user:${receiver_id}`).emit('unread_count_updated', {
+          count: receiverUnreadData?.count || 0
+        });
+
         console.log(`Message sent from ${userName} in conversation ${conversation_id}`);
       } catch (error) {
         console.error('Error sending message:', error);
@@ -178,6 +193,14 @@ export const initializeSocketHandlers = (io) => {
           reader_id: userId,
           read_count: data?.length || 0
         });
+
+        // Update unread count for the user who marked messages as read
+        if (data && data.length > 0) {
+          const { data: unreadData } = await getUnreadMessageCount(userId);
+          socket.emit('unread_count_updated', {
+            count: unreadData?.count || 0
+          });
+        }
 
         console.log(`Messages marked as read by ${userName} in conversation ${conversation_id}`);
       } catch (error) {
@@ -236,6 +259,28 @@ export const initializeSocketHandlers = (io) => {
         user_id,
         online: isOnline
       });
+    });
+
+    /**
+     * Event: get_unread_count
+     * Get current unread message count for the user
+     */
+    socket.on('get_unread_count', async () => {
+      try {
+        const { data, error } = await getUnreadMessageCount(userId);
+        
+        if (error) {
+          console.error('Error getting unread count:', error);
+          socket.emit('error', { message: 'Failed to get unread count' });
+          return;
+        }
+
+        socket.emit('unread_count_updated', {
+          count: data?.count || 0
+        });
+      } catch (error) {
+        console.error('Error getting unread count:', error);
+      }
     });
 
     /**
