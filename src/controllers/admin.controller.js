@@ -224,44 +224,6 @@ export const deleteAnnouncement = async (req, res) => {
 };
 
 /**
- * Get communities management
- */
-export const getCommunities = async (req, res) => {
-  try {
-    const { page = 1, limit = 20 } = req.query;
-    const offset = (page - 1) * limit;
-
-    const { data, error, count } = await supabase
-      .from('communities')
-      .select(`
-        id,
-        name,
-        description,
-        is_private,
-        is_active,
-        member_count,
-        created_at,
-        created_by:created_by (
-          name
-        )
-      `, { count: 'exact' })
-      .eq('college_id', req.tenant)
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1);
-
-    if (error) {
-      const formattedError = formatSupabaseError(error);
-      return errorResponse(res, formattedError.message, 400);
-    }
-
-    return paginatedResponse(res, data, page, limit, count);
-  } catch (error) {
-    console.error('Get communities error:', error);
-    return errorResponse(res, 'Failed to get communities', 500);
-  }
-};
-
-/**
  * Generate reports
  */
 export const generateReport = async (req, res) => {
@@ -735,5 +697,67 @@ export const changeUserPassword = async (req, res) => {
   } catch (error) {
     console.error('Change user password error:', error);
     return errorResponse(res, 'Failed to change password', 500);
+  }
+};
+
+/**
+ * Get admin profile details
+ */
+export const getAdminProfile = async (req, res) => {
+  try {
+    const { user_id } = req.user;
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .select(`
+        id,
+        email,
+        name,
+        role,
+        avatar_url,
+        phone,
+        bio,
+        created_at,
+        updated_at
+      `)
+      .eq('id', user_id)
+      .single();
+
+    if (error) {
+      const formattedError = formatSupabaseError(error);
+      return errorResponse(res, formattedError.message, 404);
+    }
+
+    return successResponse(res, data, 'Admin profile retrieved successfully');
+  } catch (error) {
+    console.error('Get admin profile error:', error);
+    return errorResponse(res, 'Failed to get admin profile', 500);
+  }
+};
+
+/**
+ * Update admin profile
+ */
+export const updateAdminProfile = async (req, res) => {
+  try {
+    const { user_id } = req.user;
+    const updates = { ...req.body, updated_at: new Date().toISOString() };
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .update(updates)
+      .eq('id', user_id)
+      .select()
+      .single();
+
+    if (error) {
+      const formattedError = formatSupabaseError(error);
+      return errorResponse(res, formattedError.message, 400);
+    }
+
+    return successResponse(res, data, 'Admin profile updated successfully');
+  } catch (error) {
+    console.error('Update admin profile error:', error);
+    return errorResponse(res, 'Failed to update admin profile', 500);
   }
 };

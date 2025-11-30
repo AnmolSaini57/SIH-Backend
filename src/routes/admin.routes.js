@@ -11,22 +11,16 @@ import {
   getAnnouncements,
   updateAnnouncement,
   deleteAnnouncement,
-  getCommunities,
-  generateReport
+  generateReport,
+  getAdminProfile,
+  updateAdminProfile
 } from '../controllers/admin.controller.js';
 import { 
   validate, 
   validatePagination,
   validateUUID,
   adminSchemas,
-  communitySchemas
 } from '../utils/validators.js';
-import {
-  adminCreateCommunityController,
-  adminCommunityStatsController,
-  getCommunityMessagesController,
-  postCommunityMessageController
-} from '../controllers/community.controller.js';
 
 const router = express.Router();
 
@@ -37,6 +31,16 @@ const router = express.Router();
 
 // Dashboard
 router.get('/dashboard/stats', getDashboardStats);
+
+/////////////// PROFILE MANAGEMENT /////////////////////
+// Get admin profile
+router.get('/profile', getAdminProfile);
+
+// Update admin profile
+router.put('/profile',
+  validate(adminSchemas.updateProfile),
+  updateAdminProfile
+);
 
 /////////////// USER MANAGEMENT /////////////////////
 router.get('/users', 
@@ -139,6 +143,14 @@ router.get('/communities/:communityId/messages',
 // Reports
 router.get('/reports', 
   generateReport
+);
+
+// Admin profile management
+router.get('/profile', getAdminProfile);
+
+router.put('/profile',
+  validate(adminSchemas.updateProfile),
+  updateAdminProfile
 );
 
 export default router;
