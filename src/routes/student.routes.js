@@ -104,34 +104,10 @@ router.delete('/conversations/:id',
 // Get total unread message count
 router.get('/messages/unread-count', getUnreadCountController);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// Community management
-router.get('/communities', 
-  validatePagination, 
-  getCommunities
-);
-
-router.post('/communities/:community_id/join', 
-  validateUUID('community_id'), 
-  joinCommunity
-);
+//////////////////////// COMMUNITY MANAGEMENT /////////////////////////////
+// Import community routes
+import communityRoutes from './community.routes.js';
+router.use('/communities', communityRoutes);
 
 //////////////////////// ASSESSMENT MANAGEMENT /////////////////////////////
 

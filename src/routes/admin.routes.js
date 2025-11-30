@@ -18,8 +18,15 @@ import {
   validate, 
   validatePagination,
   validateUUID,
-  adminSchemas
+  adminSchemas,
+  communitySchemas
 } from '../utils/validators.js';
+import {
+  adminCreateCommunityController,
+  adminCommunityStatsController,
+  getCommunityMessagesController,
+  postCommunityMessageController
+} from '../controllers/community.controller.js';
 
 const router = express.Router();
 
@@ -90,11 +97,35 @@ router.delete('/announcements/:announcement_id',
   deleteAnnouncement
 );
 
-// Community management
-router.get('/communities', 
-  validatePagination, 
-  getCommunities
-);
+// Community management (OLD - TO BE REPLACED)
+// router.get('/communities', 
+//   validatePagination, 
+//   getCommunities
+// );
+
+// Community creation and stats (Admin)
+// router.post('/communities', 
+//   validate(communitySchemas.createCommunity),
+//   adminCreateCommunityController
+// );
+
+// router.get('/communities/stats', adminCommunityStatsController);
+
+// router.get('/communities/:id/messages', 
+//   validateUUID('id'),
+//   getCommunityMessagesController
+// );
+
+// router.post('/communities/:id/messages', 
+//   validateUUID('id'),
+//   validate(communitySchemas.postMessage),
+//   postCommunityMessageController
+// );
+
+//////////////////////// COMMUNITY MANAGEMENT /////////////////////////////
+// Import community routes
+import communityRoutes from './community.routes.js';
+router.use('/communities', communityRoutes);
 
 // Reports
 router.get('/reports', 

@@ -149,5 +149,9 @@ router.delete('/conversations/:id',
 // Get total unread message count
 router.get('/messages/unread-count', getUnreadCountController);
 
+//////////////////////// COMMUNITY MANAGEMENT /////////////////////////////
+// Import community routes
+import communityRoutes from './community.routes.js';
+router.use('/communities', communityRoutes);
 
 export default router;

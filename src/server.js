@@ -3,6 +3,7 @@ import app from "./app.js";
 import dotenv from "dotenv";
 import { initializeSocketIO } from './config/socket.js';
 import { initializeSocketHandlers } from './sockets/messaging.socket.js';
+import { initializeCommunitySocket } from './sockets/community.socket.js';
 
 // Load environment variables
 dotenv.config();
@@ -14,7 +15,8 @@ const httpServer = createServer(app);
 
 // Initialize Socket.io
 const io = initializeSocketIO(httpServer);
-initializeSocketHandlers(io);
+initializeSocketHandlers(io); // Initialize messaging sockets
+initializeCommunitySocket(io); // Initialize community sockets
 
 // Make io accessible to routes via app
 app.set('io', io);
