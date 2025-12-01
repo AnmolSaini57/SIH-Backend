@@ -1,0 +1,97 @@
+{
+  "info": {
+    "name": "Messaging API - Students & Counsellors",
+    "description": "Conversation and messaging endpoints. Uses cookie-based auth (no extra headers needed).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Student Messaging",
+      "item": [
+        {
+          "name": "List Counsellors for Messaging",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {"raw":"{{base_url}}/api/student/counsellors-for-messaging","host":["{{base_url}}"],"path":["api","student","counsellors-for-messaging"]},
+            "description": "Get counsellors from student's college to start conversations with."
+          },
+          "response": []
+        },
+        {
+          "name": "List Conversations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {"raw":"{{base_url}}/api/student/conversations","host":["{{base_url}}"],"path":["api","student","conversations"]}
+          },
+          "response": []
+        },
+        {
+          "name": "Create/Get Conversation With Counsellor",
+          "request": {
+            "method": "POST",
+            "header": [ {"key":"Content-Type","value":"application/json"} ],
+            "body": {"mode":"raw","raw":"{\n  \"counsellor_id\": \"<robert-mind-uuid>\"\n}"},
+            "url": {"raw":"{{base_url}}/api/student/conversations","host":["{{base_url}}"],"path":["api","student","conversations"]},
+            "description": "Creates conversation if not exists, or returns existing."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Conversation by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {"raw":"{{base_url}}/api/student/conversations/{{conversation_id}}","host":["{{base_url}}"],"path":["api","student","conversations","{{conversation_id}}"]}
+          },
+          "response": []
+        },
+        {
+          "name": "Get Conversation Messages (paginated)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {"raw":"{{base_url}}/api/student/conversations/{{conversation_id}}/messages?page=1&limit=50","host":["{{base_url}}"],"path":["api","student","conversations","{{conversation_id}}","messages"],"query":[{"key":"page","value":"1"},{"key":"limit","value":"50"}]}
+          },
+          "response": []
+        },
+        {
+          "name": "Mark Messages as Read",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {"raw":"{{base_url}}/api/student/conversations/{{conversation_id}}/read","host":["{{base_url}}"],"path":["api","student","conversations","{{conversation_id}}","read"]}
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Conversation",
+          "request": {"method":"DELETE","header":[],"url":{"raw":"{{base_url}}/api/student/conversations/{{conversation_id}}","host":["{{base_url}}"],"path":["api","student","conversations","{{conversation_id}}"]}},
+          "response": []
+        },
+        {
+          "name": "Get Unread Message Count",
+          "request": {"method":"GET","header":[],"url":{"raw":"{{base_url}}/api/student/messages/unread-count","host":["{{base_url}}"],"path":["api","student","messages","unread-count"]}},
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Counsellor Messaging",
+      "item": [
+        {"name":"List Conversations","request":{"method":"GET","header":[],"url":{"raw":"{{base_url}}/api/counsellor/conversations","host":["{{base_url}}"],"path":["api","counsellor","conversations"]}},"response":[]},
+        {"name":"Get Conversation by ID","request":{"method":"GET","header":[],"url":{"raw":"{{base_url}}/api/counsellor/conversations/{{conversation_id}}","host":["{{base_url}}"],"path":["api","counsellor","conversations","{{conversation_id}}"]}},"response":[]},
+        {"name":"Get Conversation Messages (paginated)","request":{"method":"GET","header":[],"url":{"raw":"{{base_url}}/api/counsellor/conversations/{{conversation_id}}/messages?page=1&limit=50","host":["{{base_url}}"],"path":["api","counsellor","conversations","{{conversation_id}}","messages"],"query":[{"key":"page","value":"1"},{"key":"limit","value":"50"}]}},"response":[]},
+        {"name":"Mark Messages as Read","request":{"method":"PUT","header":[],"url":{"raw":"{{base_url}}/api/counsellor/conversations/{{conversation_id}}/read","host":["{{base_url}}"],"path":["api","counsellor","conversations","{{conversation_id}}","read"]}},"response":[]},
+        {"name":"Delete Conversation","request":{"method":"DELETE","header":[],"url":{"raw":"{{base_url}}/api/counsellor/conversations/{{conversation_id}}","host":["{{base_url}}"],"path":["api","counsellor","conversations","{{conversation_id}}"]}},"response":[]},
+        {"name":"Get Unread Message Count","request":{"method":"GET","header":[],"url":{"raw":"{{base_url}}/api/counsellor/messages/unread-count","host":["{{base_url}}"],"path":["api","counsellor","messages","unread-count"]}},"response":[]}
+      ]
+    }
+  ],
+  "variable": [
+    {"key":"base_url","value":"http://localhost:5000","type":"string"},
+    {"key":"conversation_id","value":"","type":"string","description":"UUID of conversation - get from list conversations response"}
+  ],
+  "event": [{"listen":"prerequest","script":{"type":"text/javascript","exec":["// Cookie-based auth. Login as student/counsellor first."]}}]
+}

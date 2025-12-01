@@ -33,6 +33,7 @@ import {
   userSchemas,
   appointmentSchemas
 } from '../utils/validators.js';
+import journalingRoutes from './journaling.routes.js';
 
 const router = express.Router();
 
@@ -65,6 +66,7 @@ router.get('/my-appointments', getMyAppointments);
 
 // Completed sessions summary with session notes and goals
 router.get('/sessions-summary', getSessionsSummary);
+
 
 //////////////////////// MESSAGING /////////////////////////////
 
@@ -151,6 +153,11 @@ router.get('/assessments/:id', getAssessmentByIdController);
 
 // Submit a new assessment
 router.post('/assessments', submitAssessmentController);
+
+//////////////////////// JOURNALING /////////////////////////////
+
+// Mount journaling routes
+router.use('/journal', journalingRoutes);
 
 export default router;
 

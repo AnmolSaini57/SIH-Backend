@@ -36,7 +36,6 @@ router.get('/dashboard/stats', getDashboardStats);
 // Get admin profile
 router.get('/profile', getAdminProfile);
 
-// Update admin profile
 router.put('/profile',
   validate(adminSchemas.updateProfile),
   updateAdminProfile
@@ -143,14 +142,6 @@ router.get('/communities/:communityId/messages',
 // Reports
 router.get('/reports', 
   generateReport
-);
-
-// Admin profile management
-router.get('/profile', getAdminProfile);
-
-router.put('/profile',
-  validate(adminSchemas.updateProfile),
-  updateAdminProfile
 );
 
 export default router;

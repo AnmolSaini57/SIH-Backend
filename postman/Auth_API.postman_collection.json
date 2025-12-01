@@ -1,0 +1,212 @@
+{
+  "info": {
+    "name": "Auth API - SIH Mental Health Platform",
+    "description": "Authentication endpoints for login, registration, logout, and password management",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "12345678"
+  },
+  "item": [
+    {
+      "name": "User Login",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"john.student@greenvalley.edu\",\n  \"password\": \"Test@12345\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/auth/login",
+          "host": ["{{base_url}}"],
+          "path": ["api", "auth", "login"]
+        },
+        "description": "Login with email and password. Sets HTTP-only cookies for session management."
+      },
+      "response": []
+    },
+    {
+      "name": "User Registration - Student",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"newstudent@greenvalley.edu\",\n  \"password\": \"Test@12345\",\n  \"confirmPassword\": \"Test@12345\",\n  \"name\": \"Sarah Student\",\n  \"role\": \"student\",\n  \"college_id\": \"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/auth/register",
+          "host": ["{{base_url}}"],
+          "path": ["api", "auth", "register"]
+        },
+        "description": "Register a new student user. Password must be at least 8 characters with uppercase, lowercase, and number."
+      },
+      "response": []
+    },
+    {
+      "name": "User Registration - Counsellor",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"dr.smith@greenvalley.edu\",\n  \"password\": \"Test@12345\",\n  \"confirmPassword\": \"Test@12345\",\n  \"name\": \"Dr. Sarah Smith\",\n  \"role\": \"counsellor\",\n  \"college_id\": \"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/auth/register",
+          "host": ["{{base_url}}"],
+          "path": ["api", "auth", "register"]
+        },
+        "description": "Register a new counsellor user. Password must be at least 8 characters with uppercase, lowercase, and number."
+      },
+      "response": []
+    },
+    {
+      "name": "User Registration - Admin",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"admin@greenvalley.edu\",\n  \"password\": \"Test@12345\",\n  \"confirmPassword\": \"Test@12345\",\n  \"name\": \"Admin User\",\n  \"role\": \"admin\",\n  \"college_id\": \"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/auth/register",
+          "host": ["{{base_url}}"],
+          "path": ["api", "auth", "register"]
+        },
+        "description": "Register a new admin user. Password must be at least 8 characters with uppercase, lowercase, and number."
+      },
+      "response": []
+    },
+    {
+      "name": "User Registration - Superadmin",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"superadmin@platform.com\",\n  \"password\": \"Test@12345\",\n  \"confirmPassword\": \"Test@12345\",\n  \"name\": \"Platform SuperAdmin\",\n  \"role\": \"superadmin\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/auth/register",
+          "host": ["{{base_url}}"],
+          "path": ["api", "auth", "register"]
+        },
+        "description": "Register a superadmin user (no college_id required). Password must be at least 8 characters with uppercase, lowercase, and number."
+      },
+      "response": []
+    },
+    {
+      "name": "User Logout",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/auth/logout",
+          "host": ["{{base_url}}"],
+          "path": ["api", "auth", "logout"]
+        },
+        "description": "Logout user and clear authentication cookies. No authentication required."
+      },
+      "response": []
+    },
+    {
+      "name": "Change Password",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"currentPassword\": \"Test@12345\",\n  \"newPassword\": \"NewTest@12345\",\n  \"confirmNewPassword\": \"NewTest@12345\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/auth/change-password",
+          "host": ["{{base_url}}"],
+          "path": ["api", "auth", "change-password"]
+        },
+        "description": "Change password for authenticated user. Authentication via HTTP-only cookies (set during login). Requires current password verification. New password must be at least 8 characters with uppercase, lowercase, and number."
+      },
+      "response": []
+    },
+    {
+      "name": "Request Password Reset",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"john.student@greenvalley.edu\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/auth/request-password-reset",
+          "host": ["{{base_url}}"],
+          "path": ["api", "auth", "request-password-reset"]
+        },
+        "description": "Request password reset email. Always returns success to prevent email enumeration."
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5000",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "noauth"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Authentication is handled via HTTP-only cookies",
+          "// Cookies are automatically set after login and sent with each request"
+        ]
+      }
+    }
+  ]
+}

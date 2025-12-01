@@ -78,7 +78,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"student@example.com\",\n  \"password\": \"your_password\"\n}"
+              "raw": "{\n  \"email\": \"john.student@greenvalley.edu\",\n  \"password\": \"Test@12345\"\n}"
             }
           },
           "response": []

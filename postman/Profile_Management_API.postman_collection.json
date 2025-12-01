@@ -1,0 +1,186 @@
+{
+  "info": {
+    "name": "Profile Management API - SIH Mental Health Platform",
+    "description": "Profile management endpoints for Students, Counsellors, and Admins",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "12345678"
+  },
+  "item": [
+    {
+      "name": "Student Profile",
+      "item": [
+        {
+          "name": "Get Student Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/student/profile",
+              "host": ["{{base_url}}"],
+              "path": ["api", "student", "profile"]
+            },
+            "description": "Retrieve the logged-in student's profile including college information. Authentication via HTTP-only cookies (must login first)."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Student Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Doe Updated\",\n  \"phone\": \"9876543210\",\n  \"bio\": \"Computer Science student passionate about mental wellness\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/student/profile",
+              "host": ["{{base_url}}"],
+              "path": ["api", "student", "profile"]
+            },
+            "description": "Update student profile. Cannot update email, role, or college_id. Optional fields: name, phone, bio, avatar"
+          },
+          "response": []
+        }
+      ],
+      "description": "Student profile management endpoints"
+    },
+    {
+      "name": "Counsellor Profile",
+      "item": [
+        {
+          "name": "Get Counsellor Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/counsellor/profile",
+              "host": ["{{base_url}}"],
+              "path": ["api", "counsellor", "profile"]
+            },
+            "description": "Retrieve the logged-in counsellor's profile including specialization, qualifications, and college information. Authentication via HTTP-only cookies (must login first)."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Counsellor Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Dr. Jane Smith\",\n  \"phone\": \"9876543210\",\n  \"bio\": \"Licensed clinical psychologist with 10 years of experience\",\n  \"specialization\": \"Anxiety and Depression\",\n  \"years_experience\": 10,\n  \"qualifications\": \"PhD in Clinical Psychology, Licensed Therapist\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/counsellor/profile",
+              "host": ["{{base_url}}"],
+              "path": ["api", "counsellor", "profile"]
+            },
+            "description": "Update counsellor profile. Cannot update email, role, or college_id. Optional fields: name, phone, bio, avatar, specialization, years_experience, qualifications"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Counsellor Dashboard Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/counsellor/dashboard/stats",
+              "host": ["{{base_url}}"],
+              "path": ["api", "counsellor", "dashboard", "stats"]
+            },
+            "description": "Get dashboard statistics including total students, pending appointments, completed sessions, etc."
+          },
+          "response": []
+        }
+      ],
+      "description": "Counsellor profile management endpoints"
+    },
+    {
+      "name": "Admin Profile",
+      "item": [
+        {
+          "name": "Get Admin Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/profile",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "profile"]
+            },
+            "description": "Retrieve the logged-in admin's profile including college information. Authentication via HTTP-only cookies (must login first)."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Admin Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Admin User\",\n  \"phone\": \"9876543210\",\n  \"bio\": \"College administrator managing mental health services\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/profile",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "profile"]
+            },
+            "description": "Update admin profile. Cannot update email, role, or college_id. Optional fields: name, phone, bio, avatar"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Admin Dashboard Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/dashboard/stats",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "dashboard", "stats"]
+            },
+            "description": "Get admin dashboard statistics including total users, appointments, communities, etc."
+          },
+          "response": []
+        }
+      ],
+      "description": "Admin profile management endpoints"
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5000",
+      "type": "string"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Authentication is handled via HTTP-only cookies",
+          "// Login with appropriate role first to set cookies automatically"
+        ]
+      }
+    }
+  ]
+}

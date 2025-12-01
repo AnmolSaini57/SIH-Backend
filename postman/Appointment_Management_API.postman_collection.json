@@ -1,0 +1,245 @@
+{
+  "info": {
+    "name": "Appointment Management API - SIH Mental Health Platform",
+    "description": "Appointment booking and management endpoints for Students and Counsellors",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "12345678"
+  },
+  "item": [
+    {
+      "name": "Student - Appointments",
+      "item": [
+        {
+          "name": "Book Appointment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"counsellor_id\": \"<robert-mind-uuid>\",\n  \"date\": \"2025-12-15T00:00:00.000Z\",\n  \"time\": \"14:30\",\n  \"type\": \"individual\",\n  \"notes\": \"Feeling anxious about exams. Need guidance on stress management.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/student/appointments",
+              "host": ["{{base_url}}"],
+              "path": ["api", "student", "appointments"]
+            },
+            "description": "Book an appointment with a counsellor. Type can be 'individual', 'group', or 'emergency'. Date must be in the future. Time format: HH:MM (24-hour format)."
+          },
+          "response": []
+        },
+        {
+          "name": "Get College Counsellors with Availability",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/student/college-counsellors?date=2025-12-15",
+              "host": ["{{base_url}}"],
+              "path": ["api", "student", "college-counsellors"],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "2025-12-15",
+                  "description": "Optional date to filter counsellors with availability (YYYY-MM-DD)"
+                }
+              ]
+            },
+            "description": "Get all counsellors from the student's college with their availability for a specific date"
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Appointments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/student/my-appointments",
+              "host": ["{{base_url}}"],
+              "path": ["api", "student", "my-appointments"]
+            },
+            "description": "Get all appointments for the logged-in student (no pagination)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Sessions Summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/student/sessions-summary",
+              "host": ["{{base_url}}"],
+              "path": ["api", "student", "sessions-summary"]
+            },
+            "description": "Get completed sessions summary with session notes and goals"
+          },
+          "response": []
+        }
+      ],
+      "description": "Student appointment management endpoints"
+    },
+    {
+      "name": "Counsellor - Appointments",
+      "item": [
+        {
+          "name": "Get Appointment Requests",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/counsellor/appointment-requests",
+              "host": ["{{base_url}}"],
+              "path": ["api", "counsellor", "appointment-requests"]
+            },
+            "description": "Get all pending appointment requests for the counsellor"
+          },
+          "response": []
+        },
+        {
+          "name": "Accept Appointment Request",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/counsellor/appointment-requests/{{appointment_id}}/accept",
+              "host": ["{{base_url}}"],
+              "path": ["api", "counsellor", "appointment-requests", "{{appointment_id}}", "accept"]
+            },
+            "description": "Accept a pending appointment request. Changes status to 'confirmed'."
+          },
+          "response": []
+        },
+        {
+          "name": "Decline Appointment Request",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/counsellor/appointment-requests/{{appointment_id}}/decline",
+              "host": ["{{base_url}}"],
+              "path": ["api", "counsellor", "appointment-requests", "{{appointment_id}}", "decline"]
+            },
+            "description": "Decline a pending appointment request. Changes status to 'cancelled'."
+          },
+          "response": []
+        },
+        {
+          "name": "Add Availability",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"date\": \"2025-12-15T00:00:00.000Z\",\n  \"start_time\": \"09:00\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/counsellor/manage-availability",
+              "host": ["{{base_url}}"],
+              "path": ["api", "counsellor", "manage-availability"]
+            },
+            "description": "Add counsellor availability slot. Date must be today or in the future. Time format: HH:MM (24-hour format)."
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Sessions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/counsellor/sessions",
+              "host": ["{{base_url}}"],
+              "path": ["api", "counsellor", "sessions"]
+            },
+            "description": "Get all appointments (sessions) for the counsellor"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Sessions Summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/counsellor/sessions-summary",
+              "host": ["{{base_url}}"],
+              "path": ["api", "counsellor", "sessions-summary"]
+            },
+            "description": "Get completed sessions summary with notes and goals"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Session Notes and Goals",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notes\": \"Student showed significant improvement in managing stress. Discussed coping mechanisms and relaxation techniques.\",\n  \"session_goals\": [\n    {\n      \"goal\": \"Practice deep breathing exercises daily\",\n      \"completed\": false,\n      \"notes\": \"Student committed to 10 minutes daily\"\n    },\n    {\n      \"goal\": \"Maintain a stress journal\",\n      \"completed\": false,\n      \"notes\": \"Will review in next session\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/counsellor/sessions-summary/{{appointment_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "counsellor", "sessions-summary", "{{appointment_id}}"]
+            },
+            "description": "Update session notes and goals for a completed appointment. Notes max 2000 chars, each goal max 200 chars."
+          },
+          "response": []
+        }
+      ],
+      "description": "Counsellor appointment management endpoints"
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "appointment_id",
+      "value": "",
+      "type": "string",
+      "description": "UUID of appointment - get from my-appointments or appointment-requests response"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Authentication is handled via HTTP-only cookies",
+          "// Login with appropriate role (student/counsellor) first to set cookies"
+        ]
+      }
+    }
+  ]
+}

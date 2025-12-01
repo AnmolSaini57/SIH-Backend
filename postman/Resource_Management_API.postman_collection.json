@@ -1,0 +1,165 @@
+{
+  "info": {
+    "name": "Resource Management API - SIH Mental Health Platform",
+    "description": "Resource upload and management endpoints for Counsellors",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "12345678"
+  },
+  "item": [
+    {
+      "name": "Upload Resource",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "src": "/path/to/file.pdf",
+              "description": "Resource file to upload (PDF, DOC, DOCX, PPT, PPTX, MP4, JPG, PNG, TXT). Max size: 50MB"
+            },
+            {
+              "key": "resource_name",
+              "value": "Stress Management Guide",
+              "type": "text",
+              "description": "Name of the resource (required)"
+            },
+            {
+              "key": "description",
+              "value": "A comprehensive guide on managing academic stress and anxiety",
+              "type": "text",
+              "description": "Description of the resource (optional)"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/api/counsellor/resources",
+          "host": ["{{base_url}}"],
+          "path": ["api", "counsellor", "resources"]
+        },
+        "description": "Upload a new resource file. Allowed file types: pdf, doc, docx, ppt, pptx, mp4, jpg, jpeg, png, txt. Maximum file size: 50MB."
+      },
+      "response": []
+    },
+    {
+      "name": "Get All Resources",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/counsellor/resources",
+          "host": ["{{base_url}}"],
+          "path": ["api", "counsellor", "resources"]
+        },
+        "description": "Get all resources uploaded by the logged-in counsellor"
+      },
+      "response": []
+    },
+    {
+      "name": "Get Resource by ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/counsellor/resources/{{resource_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["api", "counsellor", "resources", "{{resource_id}}"]
+        },
+        "description": "Get a single resource by its ID. Returns resource metadata."
+      },
+      "response": []
+    },
+    {
+      "name": "Update Resource Metadata",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"resource_name\": \"Updated Stress Management Guide\",\n  \"description\": \"An updated comprehensive guide on managing academic stress, anxiety, and building resilience\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/counsellor/resources/{{resource_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["api", "counsellor", "resources", "{{resource_id}}"]
+        },
+        "description": "Update resource metadata (name and description). Does not update the actual file."
+      },
+      "response": []
+    },
+    {
+      "name": "Delete Resource",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/counsellor/resources/{{resource_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["api", "counsellor", "resources", "{{resource_id}}"]
+        },
+        "description": "Delete a resource. Removes both the file from storage and the database record."
+      },
+      "response": []
+    },
+    {
+      "name": "Get Resource Download URL",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/counsellor/resources/{{resource_id}}/download",
+          "host": ["{{base_url}}"],
+          "path": ["api", "counsellor", "resources", "{{resource_id}}", "download"]
+        },
+        "description": "Generate a signed download URL for the resource file. The URL is temporary and expires after a set time."
+      },
+      "response": []
+    },
+    {
+      "name": "Get Resource Statistics",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/counsellor/resources/stats",
+          "host": ["{{base_url}}"],
+          "path": ["api", "counsellor", "resources", "stats"]
+        },
+        "description": "Get statistics about uploaded resources (total count, total size, etc.)"
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "resource_id",
+      "value": "",
+      "type": "string",
+      "description": "UUID of resource - get from resources list response"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Authentication is handled via HTTP-only cookies",
+          "// Login as counsellor first to set cookies automatically"
+        ]
+      }
+    }
+  ]
+}

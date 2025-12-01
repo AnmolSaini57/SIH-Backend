@@ -11,24 +11,10 @@
       "type": "string"
     },
     {
-      "key": "student_token",
-      "value": "",
-      "type": "string"
-    },
-    {
-      "key": "counsellor_token",
-      "value": "",
-      "type": "string"
-    },
-    {
-      "key": "admin_token",
-      "value": "",
-      "type": "string"
-    },
-    {
       "key": "community_id",
       "value": "",
-      "type": "string"
+      "type": "string",
+      "description": "UUID of community - get from communities list response"
     }
   ],
   "item": [
@@ -39,13 +25,7 @@
           "name": "Get All Communities",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{student_token}}",
-                "type": "text"
-              }
-            ],
+            "header": [],
             "url": {
               "raw": "{{base_url}}/api/student/communities/all",
               "host": ["{{base_url}}"],
@@ -57,13 +37,7 @@
           "name": "Get Joined Communities",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{student_token}}",
-                "type": "text"
-              }
-            ],
+            "header": [],
             "url": {
               "raw": "{{base_url}}/api/student/communities/joined",
               "host": ["{{base_url}}"],
@@ -75,13 +49,7 @@
           "name": "Get Available Communities",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{student_token}}",
-                "type": "text"
-              }
-            ],
+            "header": [],
             "url": {
               "raw": "{{base_url}}/api/student/communities/available",
               "host": ["{{base_url}}"],
@@ -93,13 +61,7 @@
           "name": "Join Community",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{student_token}}",
-                "type": "text"
-              }
-            ],
+            "header": [],
             "url": {
               "raw": "{{base_url}}/api/student/communities/{{community_id}}/join",
               "host": ["{{base_url}}"],
@@ -111,13 +73,7 @@
           "name": "Leave Community",
           "request": {
             "method": "DELETE",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{student_token}}",
-                "type": "text"
-              }
-            ],
+            "header": [],
             "url": {
               "raw": "{{base_url}}/api/student/communities/{{community_id}}/leave",
               "host": ["{{base_url}}"],
@@ -129,13 +85,7 @@
           "name": "Get Community Messages",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{student_token}}",
-                "type": "text"
-              }
-            ],
+            "header": [],
             "url": {
               "raw": "{{base_url}}/api/student/communities/{{community_id}}/messages?limit=50",
               "host": ["{{base_url}}"],
@@ -163,13 +113,7 @@
           "name": "Get All Communities",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{counsellor_token}}",
-                "type": "text"
-              }
-            ],
+            "header": [],
             "url": {
               "raw": "{{base_url}}/api/counsellor/communities/all",
               "host": ["{{base_url}}"],
@@ -181,13 +125,7 @@
           "name": "Get Joined Communities",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{counsellor_token}}",
-                "type": "text"
-              }
-            ],
+            "header": [],
             "url": {
               "raw": "{{base_url}}/api/counsellor/communities/joined",
               "host": ["{{base_url}}"],
@@ -199,13 +137,7 @@
           "name": "Get Available Communities",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{counsellor_token}}",
-                "type": "text"
-              }
-            ],
+            "header": [],
             "url": {
               "raw": "{{base_url}}/api/counsellor/communities/available",
               "host": ["{{base_url}}"],
@@ -217,13 +149,7 @@
           "name": "Join Community",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{counsellor_token}}",
-                "type": "text"
-              }
-            ],
+            "header": [],
             "url": {
               "raw": "{{base_url}}/api/counsellor/communities/{{community_id}}/join",
               "host": ["{{base_url}}"],
@@ -235,13 +161,7 @@
           "name": "Leave Community",
           "request": {
             "method": "DELETE",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{counsellor_token}}",
-                "type": "text"
-              }
-            ],
+            "header": [],
             "url": {
               "raw": "{{base_url}}/api/counsellor/communities/{{community_id}}/leave",
               "host": ["{{base_url}}"],
@@ -253,13 +173,7 @@
           "name": "Get Community Messages",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{counsellor_token}}",
-                "type": "text"
-              }
-            ],
+            "header": [],
             "url": {
               "raw": "{{base_url}}/api/counsellor/communities/{{community_id}}/messages?limit=50",
               "host": ["{{base_url}}"],
@@ -282,13 +196,7 @@
           "name": "Get Statistics",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{admin_token}}",
-                "type": "text"
-              }
-            ],
+            "header": [],
             "url": {
               "raw": "{{base_url}}/api/admin/communities/statistics",
               "host": ["{{base_url}}"],
@@ -300,13 +208,7 @@
           "name": "Get All Communities",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{admin_token}}",
-                "type": "text"
-              }
-            ],
+            "header": [],
             "url": {
               "raw": "{{base_url}}/api/admin/communities",
               "host": ["{{base_url}}"],
@@ -318,13 +220,7 @@
           "name": "Get Community Details",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{admin_token}}",
-                "type": "text"
-              }
-            ],
+            "header": [],
             "url": {
               "raw": "{{base_url}}/api/admin/communities/{{community_id}}",
               "host": ["{{base_url}}"],
@@ -337,11 +233,6 @@
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{admin_token}}",
-                "type": "text"
-              },
               {
                 "key": "Content-Type",
                 "value": "application/json",
@@ -365,11 +256,6 @@
             "method": "PUT",
             "header": [
               {
-                "key": "Authorization",
-                "value": "Bearer {{admin_token}}",
-                "type": "text"
-              },
-              {
                 "key": "Content-Type",
                 "value": "application/json",
                 "type": "text"
@@ -390,13 +276,7 @@
           "name": "Delete Community",
           "request": {
             "method": "DELETE",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{admin_token}}",
-                "type": "text"
-              }
-            ],
+            "header": [],
             "url": {
               "raw": "{{base_url}}/api/admin/communities/{{community_id}}",
               "host": ["{{base_url}}"],
@@ -408,13 +288,7 @@
           "name": "Get Community Messages",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{admin_token}}",
-                "type": "text"
-              }
-            ],
+            "header": [],
             "url": {
               "raw": "{{base_url}}/api/admin/communities/{{community_id}}/messages?limit=100",
               "host": ["{{base_url}}"],

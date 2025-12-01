@@ -12,13 +12,7 @@
           "name": "Get Available Assessments",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Cookie",
-                "value": "sb-access-token={{sb_access_token}}; sb-refresh-token={{sb_refresh_token}}",
-                "type": "text"
-              }
-            ],
+            "header": [],
             "url": {
               "raw": "{{base_url}}/api/student/assessments/available",
               "host": ["{{base_url}}"],
@@ -32,11 +26,6 @@
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Cookie",
-                "value": "sb-access-token={{sb_access_token}}; sb-refresh-token={{sb_refresh_token}}",
-                "type": "text"
-              },
               {
                 "key": "Content-Type",
                 "value": "application/json",
@@ -61,11 +50,6 @@
             "method": "POST",
             "header": [
               {
-                "key": "Cookie",
-                "value": "sb-access-token={{sb_access_token}}; sb-refresh-token={{sb_refresh_token}}",
-                "type": "text"
-              },
-              {
                 "key": "Content-Type",
                 "value": "application/json",
                 "type": "text"
@@ -89,11 +73,6 @@
             "method": "POST",
             "header": [
               {
-                "key": "Authorization",
-                "value": "Bearer {{token}}",
-                "type": "text"
-              },
-              {
                 "key": "Content-Type",
                 "value": "application/json",
                 "type": "text"
@@ -115,13 +94,7 @@
           "name": "Get Assessment History",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Cookie",
-                "value": "sb-access-token={{sb_access_token}}; sb-refresh-token={{sb_refresh_token}}",
-                "type": "text"
-              }
-            ],
+            "header": [],
             "url": {
               "raw": "{{base_url}}/api/student/assessments",
               "host": ["{{base_url}}"],
@@ -134,13 +107,7 @@
           "name": "Get Assessment History (Filtered by Type)",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Cookie",
-                "value": "sb-access-token={{sb_access_token}}; sb-refresh-token={{sb_refresh_token}}",
-                "type": "text"
-              }
-            ],
+            "header": [],
             "url": {
               "raw": "{{base_url}}/api/student/assessments?formType=PHQ-9",
               "host": ["{{base_url}}"],
@@ -159,13 +126,7 @@
           "name": "Get Assessment History (Paginated)",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Cookie",
-                "value": "sb-access-token={{sb_access_token}}; sb-refresh-token={{sb_refresh_token}}",
-                "type": "text"
-              }
-            ],
+            "header": [],
             "url": {
               "raw": "{{base_url}}/api/student/assessments?limit=10&offset=0",
               "host": ["{{base_url}}"],
@@ -188,13 +149,7 @@
           "name": "Get Single Assessment by ID",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Cookie",
-                "value": "sb-access-token={{sb_access_token}}; sb-refresh-token={{sb_refresh_token}}",
-                "type": "text"
-              }
-            ],
+            "header": [],
             "url": {
               "raw": "{{base_url}}/api/student/assessments/:id",
               "host": ["{{base_url}}"],
@@ -214,13 +169,7 @@
           "name": "Get Assessment Statistics",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}",
-                "type": "text"
-              }
-            ],
+            "header": [],
             "url": {
               "raw": "{{base_url}}/api/student/assessments/stats",
               "host": ["{{base_url}}"],
@@ -238,20 +187,12 @@
       "value": "http://localhost:5000",
       "type": "string"
     },
-    {
-      "key": "sb_access_token",
-      "value": "",
-      "type": "string"
-    },
-    {
-      "key": "sb_refresh_token",
-      "value": "",
-      "type": "string"
-    },
+
     {
       "key": "assessment_id",
       "value": "",
-      "type": "string"
+      "type": "string",
+      "description": "UUID of assessment - get from assessment history response"
     }
   ]
 }

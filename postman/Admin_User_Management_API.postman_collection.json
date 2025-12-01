@@ -1,0 +1,127 @@
+{
+  "info": {
+    "name": "Admin - User Management API",
+    "description": "Admin endpoints for managing users (students, counsellors). Uses HTTP-only cookies for auth.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "List Users (Paginated)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/admin/users?page=1&limit=20",
+          "host": ["{{base_url}}"],
+          "path": ["api", "admin", "users"],
+          "query": [
+            { "key": "page", "value": "1" },
+            { "key": "limit", "value": "20" }
+          ]
+        },
+        "description": "Get paginated users for the admin's college. Cookie-based auth."
+      },
+      "response": []
+    },
+    {
+      "name": "Get User Details",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/admin/users/{{user_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["api", "admin", "users", "{{user_id}}"]
+        },
+        "description": "Get details for a single user by UUID."
+      },
+      "response": []
+    },
+    {
+      "name": "Create Student",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Emma Student\",\n  \"email\": \"emma.student@greenvalley.edu\",\n  \"password\": \"Test@12345\",\n  \"phone\": \"9876543210\",\n  \"year\": 2,\n  \"branch\": \"CSE\",\n  \"roll_no\": \"GV-CSE-2024-055\",\n  \"bio\": \"Interested in mindfulness\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/admin/users/students",
+          "host": ["{{base_url}}"],
+          "path": ["api", "admin", "users", "students"]
+        },
+        "description": "Create a new student. Validation per adminSchemas.createStudent."
+      },
+      "response": []
+    },
+    {
+      "name": "Create Counsellor",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Dr. Lisa Hope\",\n  \"email\": \"lisa.hope@greenvalley.edu\",\n  \"password\": \"Test@12345\",\n  \"phone\": \"9876501234\",\n  \"specialization\": \"Stress Management, Academic Anxiety\",\n  \"bio\": \"10+ years experience\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/admin/users/counsellors",
+          "host": ["{{base_url}}"],
+          "path": ["api", "admin", "users", "counsellors"]
+        },
+        "description": "Create a new counsellor. Validation per adminSchemas.createCounsellor."
+      },
+      "response": []
+    },
+    {
+      "name": "Change User Password",
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"new_password\": \"NewTest@12345\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/admin/users/{{user_id}}/password",
+          "host": ["{{base_url}}"],
+          "path": ["api", "admin", "users", "{{user_id}}", "password"]
+        },
+        "description": "Change password for a user by admin."
+      },
+      "response": []
+    },
+    {
+      "name": "Delete User",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/admin/users/{{user_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["api", "admin", "users", "{{user_id}}"]
+        },
+        "description": "Delete a user by UUID."
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:5000", "type": "string" },
+    { "key": "user_id", "value": "", "type": "string", "description": "UUID of user to manage" }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {"type":"text/javascript","exec":[
+        "// Cookie-based auth: login as admin first using Auth collection"
+      ]}
+    }
+  ]
+}
