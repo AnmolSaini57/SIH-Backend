@@ -39,6 +39,9 @@ Assessment Details:
 - Severity Level: ${severityLevel}
 - Responses: ${JSON.stringify(responses)}
 
+By the responses,formType, you can get what answer is given by the student for each question.So use that to understand their situation better and give more personalized guidance.
+The student is looking for advice on how to manage their mental health based on these results.
+
 GUIDELINES:
 I. Keep everything SHORT:
    - Guidance: 5–7 crisp sentences (maximum 100 words)

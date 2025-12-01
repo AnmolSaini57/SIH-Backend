@@ -229,7 +229,8 @@ const calculateScore = (formType, responses) => {
     'PSQI': scorePSQI,
     'BHI-10': scoreBHI10,
     'DERS-18': scoreDERS18,
-    'CSSRS': scoreCSSRS
+    'CSSRS': scoreCSSRS,
+    'C-SSRS': scoreCSSRS
   };
   
   const scoringFunction = scoringFunctions[formType];

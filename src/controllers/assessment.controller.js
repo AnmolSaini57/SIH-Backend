@@ -32,11 +32,11 @@ export const submitAssessmentController = async (req, res) => {
     // Validate form type
     const validFormTypes = [
       'PHQ-9', 'GAD-7', 'GHQ-12', 'PSS-10', 'WHO-5', 
-      'IAT', 'PSQI', 'BHI-10', 'DERS-18', 'CSSRS'
+      'IAT', 'PSQI', 'BHI-10', 'DERS-18', 'CSSRS', 'C-SSRS'
     ];
 
     if (!validFormTypes.includes(formType)) {
-      return errorResponse(res, 'Invalid form type', 400);
+      return errorResponse(res, `Invalid form type: ${formType}. Valid types are: ${validFormTypes.join(', ')}`, 400);
     }
 
     // Validate responses is an object
