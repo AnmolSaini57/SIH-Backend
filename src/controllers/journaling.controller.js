@@ -299,23 +299,24 @@ export const generatePositiveReframePreview = async (req, res) => {
     const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
     const prompt = `You are a compassionate mental health assistant for college students.
-  The student has shared a worry. Reframe it with balance, validation, and gentle encouragement.
+The student has shared a worry. Reframe it with balance, validation, and gentle encouragement.
 
-  STUDENT WORRY:
-  "${whats_on_mind}"
+STUDENT WORRY:
+"${whats_on_mind}"
 
-  LANGUAGE STYLE:
-  Mirror the student's language and script. If Hindi script, respond in Hindi. If Urdu script, respond in Urdu. If Latin script with mixed Hindi + English words (Hinglish), respond in Hinglish (Hindi + English words in Latin script). Otherwise respond in natural English.
+LANGUAGE STYLE:
+Mirror the student's language and script. If Hindi script, respond in Hindi. If Urdu script, respond in Urdu. If Latin script with mixed Hindi + English words (Hinglish), respond in Hinglish (Hindi + English words in Latin script). Otherwise respond in natural English.
 
-  GUIDELINES:
-  1. Validate feelings.
-  2. Offer realistic, hopeful perspective.
-  3. 3-5 sentences, <= 80 words.
-  4. No lists, labels, markdown, or emojis.
-  5. Second person (you).
-  6. One gentle actionable suggestion.
+GUIDELINES:
+1. Validate feelings without using "I" or directly addressing the student with "you".
+2. Offer a realistic, hopeful perspective written in a neutral, third-person tone.
+3. 5–7 sentences, <= 150 words.
+4. No lists, labels, markdown, or emojis.
+5. Provide one gentle actionable suggestion in third-person form.
+6. Only provide the supportive reframe
+7. Responses must not contain "I", "you", "your", or phrases like "it sounds like". Use only neutral third-person reflections.
 
-  OUTPUT: Only the supportive reframe.`;
+OUTPUT: Only the supportive reframe.`;
 
     const generationConfig = { maxOutputTokens: 150, temperature: 0.7 };
     const result = await model.generateContent({
