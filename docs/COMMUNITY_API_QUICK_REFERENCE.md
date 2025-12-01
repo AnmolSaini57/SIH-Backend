@@ -1,5 +1,10 @@
 # Community API Quick Reference
 
+## Authentication
+- **Method**: HTTP-only cookies (`sb-access-token`, `sb-refresh-token`)
+- **CORS**: Requires `credentials: 'include'` in all requests
+- **No Authorization headers needed**
+
 ## Base URLs
 - Student: `/api/student/communities`
 - Counsellor: `/api/counsellor/communities`

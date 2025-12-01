@@ -19,15 +19,19 @@ The Assessment API provides endpoints for students to submit mental health asses
 ## Authentication
 
 All assessment endpoints require:
-- **Authentication**: Bearer token in Authorization header
+- **Authentication**: HTTP-only cookies (`sb-access-token`, `sb-refresh-token`)
 - **Role**: Student only
-- **Tenant**: College ID automatically extracted from token
+- **Tenant**: College ID automatically extracted from JWT
+- **CORS**: Requires `credentials: 'include'` in all requests
 
 ```javascript
-headers: {
-  'Authorization': 'Bearer YOUR_JWT_TOKEN',
-  'Content-Type': 'application/json'
-}
+// No Authorization header needed - cookies sent automatically
+fetch('http://localhost:5000/api/student/assessments', {
+  credentials: 'include',
+  headers: {
+    'Content-Type': 'application/json'
+  }
+})
 ```
 
 ---

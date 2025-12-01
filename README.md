@@ -3,13 +3,21 @@
 ## 🚀 Overview
 Enterprise-grade Node.js/Express backend for the SIH Mental Health Platform with Supabase integration, multi-tenant architecture, and comprehensive security.
 
+## 🔐 Authentication
+**Supabase HTTP-only Cookie-based JWT Authentication**
+- HTTP-only cookies (`sb-access-token`, `sb-refresh-token`) for secure token storage
+- Automatic token refresh handling
+- No Authorization headers required
+- Frontend requires `credentials: 'include'` in all requests
+
 ## 🏗️ Architecture Features
 - **Multi-tenant college isolation**
 - **Role-based access control** (Student, Counsellor, Admin, SuperAdmin)
-- **JWT-based authentication** with automatic refresh
+- **Cookie-based JWT authentication** with automatic refresh
 - **HttpOnly cookie security**
 - **Comprehensive logging** with Winston
 - **Rate limiting** and security middleware
+- **Real-time features** with Socket.IO (messaging, community)
 - **Clean separation of concerns**
 
 ## 🔐 Security Features
@@ -111,40 +119,124 @@ npm start
 
 ## 📊 API Endpoints
 
-### Authentication
-- `POST /auth/login` - User login
-- `POST /auth/logout` - User logout
-- `POST /auth/register` - User registration
-- `GET /auth/me` - Get current user
-- `POST /auth/refresh` - Refresh JWT token
+### 📚 Complete API Documentation
 
-### Student Routes (`/student`)
+**Frontend Integration Guide**: [`FRONTEND_INTEGRATION_GUIDE.md`](./FRONTEND_INTEGRATION_GUIDE.md)
+- Complete authentication flow
+- All API endpoints with examples
+- WebSocket setup
+- Role-based routing patterns
+- Error handling
+- Testing credentials
+
+**Feature-Specific Documentation** (in `docs/` folder):
+1. [`AUTH_API_DOCUMENTATION.md`](./docs/AUTH_API_DOCUMENTATION.md) - Login, Register, Logout
+2. [`PROFILE_MANAGEMENT_API_DOCUMENTATION.md`](./docs/PROFILE_MANAGEMENT_API_DOCUMENTATION.md) - User profile management
+3. [`APPOINTMENT_MANAGEMENT_API_DOCUMENTATION.md`](./docs/APPOINTMENT_MANAGEMENT_API_DOCUMENTATION.md) - Appointment booking system
+4. [`ASSESSMENT_API_DOCUMENTATION.md`](./docs/ASSESSMENT_API_DOCUMENTATION.md) - Mental health assessments (PHQ-9, GAD-7, etc.)
+5. [`JOURNALING_IMPLEMENTATION_SUMMARY.md`](./docs/JOURNALING_IMPLEMENTATION_SUMMARY.md) - Student journaling with AI insights
+6. [`MESSAGING_IMPLEMENTATION_SUMMARY.md`](./docs/MESSAGING_IMPLEMENTATION_SUMMARY.md) - Real-time messaging
+7. [`COMMUNITY_API_QUICK_REFERENCE.md`](./docs/COMMUNITY_API_QUICK_REFERENCE.md) - Anonymous community chatrooms
+8. [`IMPLEMENTATION_SUMMARY_RESOURCES.md`](./docs/IMPLEMENTATION_SUMMARY_RESOURCES.md) - Counsellor resource management
+9. [`ADMIN_USER_MANAGEMENT_SUMMARY.md`](./docs/ADMIN_USER_MANAGEMENT_SUMMARY.md) - Admin user CRUD operations
+
+**Postman Collections** (in `postman/` folder):
+- `Auth_API.postman_collection.json`
+- `Profile_Management_API.postman_collection.json`
+- `Appointment_Management_API.postman_collection.json`
+- `Assessment_API.postman_collection.json`
+- `Journaling_API.postman_collection.json`
+- `Messaging_API.postman_collection.json`
+- `Community_API.postman_collection.json`
+- `Resource_Management_API.postman_collection.json`
+- `Admin_User_Management_API.postman_collection.json`
+
+All collections use cookie-based auth and include test data matching the seeded database.
+
+---
+
+### Quick Endpoint Overview
+
+### Authentication (`/api/auth`)
+- `POST /register` - User registration (student, counsellor, admin)
+- `POST /login` - User login (sets HTTP-only cookies)
+- `POST /logout` - User logout (clears cookies)
+
+### Student Routes (`/api/student`)
 - `GET /profile` - Get student profile
 - `PUT /profile` - Update student profile
+- `GET /counsellors` - Get available counsellors
+- `POST /appointments` - Book appointment
+- `GET /appointments` - Get appointment history
+- `POST /assessments` - Submit mental health assessment
 - `GET /assessments` - Get assessment history
-- `POST /assessments` - Submit assessment
-- `GET /communities` - Get joined communities
-- `GET /appointments` - Get appointments
+- `POST /journaling/entries` - Create journal entry (daily/weekly/worries)
+- `GET /journaling/entries` - Get journal entries
+- `GET /journaling/insights/:id` - Get AI insights for entry
+- `GET /communities` - Get communities
+- `POST /communities/:id/join` - Join community
+- `GET /resources` - View counsellor resources
 
-### Counsellor Routes (`/counsellor`)
+### Counsellor Routes (`/api/counsellor`)
 - `GET /profile` - Get counsellor profile
-- `GET /students` - Get assigned students
-- `GET /appointments` - Manage appointments
-- `POST /notes` - Add session notes
-- `GET /resources` - Access counsellor resources
+- `PUT /profile` - Update profile with available slots
+- `GET /appointments` - View appointment requests
+- `PUT /appointments/:id` - Confirm/cancel/complete appointments
+- `POST /resources` - Upload educational resources
+- `GET /resources` - View own resources
+- `DELETE /resources/:id` - Delete resource
+- `GET /communities` - View communities
 
-### Admin Routes (`/admin`)
-- `GET /dashboard` - Admin dashboard data
-- `GET /users` - Manage college users
-- `GET /analytics` - College analytics
-- `POST /announcements` - Create announcements
-- `GET /reports` - Generate reports
+### Admin Routes (`/api/admin`)
+- `GET /profile` - Get admin profile
+- `GET /users` - List users in college
+- `POST /users` - Create student or counsellor
+- `PUT /users/:id` - Update user
+- `DELETE /users/:id` - Delete user
+- `POST /users/:id/password` - Change user password
+- `POST /communities` - Create community
+- `PUT /communities/:id` - Update community
+- `DELETE /communities/:id` - Delete community
 
-### SuperAdmin Routes (`/superadmin`)
-- `GET /colleges` - Manage all colleges
-- `GET /global-analytics` - Cross-college analytics
+### SuperAdmin Routes (`/api/superadmin`)
+- `GET /colleges` - List all colleges
 - `POST /colleges` - Create new college
-- `GET /system-health` - System monitoring
+- `PUT /colleges/:id` - Update college
+- `DELETE /colleges/:id` - Delete college
+
+### WebSocket Events (Real-time)
+
+**Messaging** (`socket.io`):
+- `messaging:join` - Join conversation room
+- `messaging:message` - Send message
+- `messaging:typing` - Typing indicator
+- Events: Real-time message delivery, read receipts
+
+**Community** (`socket.io`):
+- `community:join` - Join community room
+- `community:message` - Send message to community
+- Events: Real-time community messages (anonymous mode supported)
+
+---
+
+## 🧪 Testing Credentials
+
+All passwords: `Test@12345`
+
+**Green Valley College** (`aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa`):
+- Student: `john.student@greenvalley.edu`
+- Counsellor: `robert.mind@greenvalley.edu` (Dr. Robert Mind)
+- Admin: `alice.admin@greenvalley.edu`
+
+**Horizon Institute** (`bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb`):
+- Student: `priya.horizon@horizon.edu`
+- Counsellor: `dr.sharma@horizon.edu`
+- Admin: `admin.horizon@horizon.edu`
+
+**Platform**:
+- Superadmin: `sara.root@platform.com`
+
+Run seed script: `node scripts/seedUsers.js`
 
 ## 🛡️ Security Implementation
 
@@ -202,9 +294,17 @@ logger.info('User logged in', { userId, college_id });
 
 ## 🧪 Testing
 ```bash
-npm test                 # Run all tests
-npm run test:unit       # Unit tests
-npm run test:integration # Integration tests
+# Import Postman collections from postman/ folder
+# All collections pre-configured with cookie auth and test data
+
+# Or use curl with cookies:
+curl -X POST http://localhost:5000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"john.student@greenvalley.edu","password":"Test@12345"}' \
+  --cookie-jar cookies.txt
+
+curl http://localhost:5000/api/student/profile \
+  --cookie cookies.txt
 ```
 
 ## 📝 Contributing

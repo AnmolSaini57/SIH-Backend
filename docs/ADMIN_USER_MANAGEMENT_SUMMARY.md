@@ -1,5 +1,10 @@
 # Admin User Management Implementation Summary
 
+## Authentication
+- **Method**: HTTP-only cookies (`sb-access-token`, `sb-refresh-token`)
+- **Role**: Admin (college-level), Superadmin (platform-level)
+- **CORS**: Requires `credentials: 'include'` in all requests
+
 ## ✅ Completed Implementation
 
 This document summarizes the complete backend implementation for admin user management functionality.

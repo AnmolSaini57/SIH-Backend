@@ -4,6 +4,11 @@
 
 Complete backend implementation for student mental health journaling with three distinct journal types and AI-powered features.
 
+## Authentication
+- **Method**: HTTP-only cookies (`sb-access-token`, `sb-refresh-token`)
+- **Role**: Student only
+- **CORS**: Requires `credentials: 'include'` in all requests
+
 ## 📋 What Was Implemented
 
 ### 1. Database Schema ✅

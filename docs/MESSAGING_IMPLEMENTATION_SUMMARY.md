@@ -4,6 +4,12 @@
 
 The complete real-time messaging system has been successfully implemented for the SIH Mental Health Platform. Students and counsellors can now chat with each other in real-time with full support for typing indicators, read receipts, and online status tracking.
 
+## Authentication
+- **REST API**: HTTP-only cookies (`sb-access-token`, `sb-refresh-token`)
+- **WebSocket**: Requires `withCredentials: true` in Socket.IO client
+- **CORS**: Requires `credentials: 'include'` in all HTTP requests
+- **No Authorization headers needed**
+
 ## 📦 What Was Delivered
 
 ### 1. Database Schema ✅

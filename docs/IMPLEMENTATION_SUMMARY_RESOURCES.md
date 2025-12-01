@@ -1,5 +1,10 @@
 # 🎓 Counsellor Resources Backend - Implementation Summary
 
+## Authentication
+- **Method**: HTTP-only cookies (`sb-access-token`, `sb-refresh-token`)
+- **Role**: Counsellor (for uploads), Student (for viewing)
+- **CORS**: Requires `credentials: 'include'` in all requests
+
 ## ✅ What Was Implemented
 
 A complete backend system for counsellors to upload and manage educational resources.
