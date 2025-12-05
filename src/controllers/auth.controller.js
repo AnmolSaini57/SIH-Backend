@@ -292,3 +292,83 @@ export const requestPasswordReset = async (req, res) => {
     return errorResponse(res, 'Failed to process password reset request', 500);
   }
 };
+
+/**
+ * Get current user information
+ * Returns the authenticated user's profile data
+ */
+export const getMe = async (req, res) => {
+  try {
+    const userId = req.user.user_id;
+
+    // Get user profile information
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select(`
+        id,
+        email,
+        name,
+        role,
+        college_id,
+        avatar_url,
+        phone,
+        bio,
+        created_at,
+        colleges (
+          id,
+          name
+        )
+      `)
+      .eq('id', userId)
+      .single();
+
+    if (profileError) {
+      console.error('Profile fetch error:', profileError);
+      return errorResponse(res, 'Failed to fetch user profile', 500);
+    }
+
+    if (!profile) {
+      return errorResponse(res, 'User profile not found', 404);
+    }
+
+    // Return user information
+    const userData = {
+      id: profile.id,
+      email: profile.email,
+      name: profile.name,
+      role: profile.role,
+      college_id: profile.college_id,
+      college: profile.colleges,
+      avatar_url: profile.avatar_url,
+      phone: profile.phone,
+      bio: profile.bio,
+      created_at: profile.created_at
+    };
+
+    return successResponse(res, userData, 'User profile retrieved successfully');
+
+  } catch (error) {
+    console.error('Get me controller error:', error);
+    return errorResponse(res, 'Failed to retrieve user information', 500);
+  }
+};
+
+/**
+ * Get access token from HTTP-only cookie
+ * Used for Socket.IO authentication
+ * GET /api/auth/token
+ */
+export const getToken = async (req, res) => {
+  try {
+    const token = req.cookies['sb-access-token'];
+    
+    if (!token) {
+      return errorResponse(res, 'No authentication token found', 401);
+    }
+
+    return successResponse(res, { token }, 'Access token retrieved successfully');
+  } catch (error) {
+    console.error('Get token error:', error);
+    return errorResponse(res, 'Failed to retrieve token', 500);
+  }
+};

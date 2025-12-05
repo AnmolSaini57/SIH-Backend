@@ -15,8 +15,13 @@ export default async function auth(req, res, next) {
     const accessToken = req.cookies["sb-access-token"];
     const refreshToken = req.cookies["sb-refresh-token"];
 
+    console.log(`[Auth] Request to ${req.method} ${req.path}`);
+    console.log(`[Auth] Access token present: ${!!accessToken}`);
+    console.log(`[Auth] Refresh token present: ${!!refreshToken}`);
+
     // Check if refresh token exists
     if (!refreshToken) {
+      console.log('[Auth] No refresh token found - returning 401');
       return errorResponse(res, "Session expired. Please login again.", 401);
     }
 

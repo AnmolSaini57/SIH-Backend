@@ -4,7 +4,9 @@ import {
   register,
   logout,
   changePassword,
-  requestPasswordReset
+  requestPasswordReset,
+  getMe,
+  getToken
 } from '../controllers/auth.controller.js';
 import { validate, authSchemas } from '../utils/validators.js';
 import auth from '../middleware/auth.js';
@@ -35,6 +37,16 @@ router.post('/request-password-reset',
 );
 
 // Protected routes (require authentication)
+
+router.get('/me',
+  auth,
+  getMe
+);
+
+router.get('/token',
+  auth,
+  getToken
+);
 
 router.post('/change-password', 
   auth, 

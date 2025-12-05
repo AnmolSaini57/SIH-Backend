@@ -17,51 +17,30 @@ export const initializeSocketIO = (httpServer) => {
     pingInterval: 25000
   });
 
-  // Authentication middleware for Socket.io
-  // Note: Uses Supabase JWT token (same as REST APIs)
-  // Frontend must pass the Supabase access token explicitly since
-  // httpOnly cookies don't work with Socket.io WebSocket connections
+  // Simplified middleware - just extract user data from handshake
+  // Authentication is handled by REST API endpoints
   io.use(async (socket, next) => {
     try {
-      // Extract Supabase access token from handshake auth or query
-      const token = socket.handshake.auth.token || socket.handshake.query.token;
+      // Get user data from auth object sent by frontend
+      const { userId, userRole, collegeId } = socket.handshake.auth;
       
-      if (!token) {
-        return next(new Error('Authentication error: No token provided'));
+      if (!userId) {
+        console.log('[Socket] No user ID provided in handshake');
+        return next(new Error('User ID required'));
       }
 
-      // Verify with Supabase Auth (validates the Supabase JWT)
-      const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-
-      if (authError || !user) {
-        return next(new Error('Authentication error: Invalid token'));
-      }
-
-      // Get user profile from database
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('id, email, name, role, college_id, avatar_url')
-        .eq('id', user.id)
-        .single();
-
-      if (profileError || !profile) {
-        return next(new Error('Authentication error: User profile not found'));
-      }
-
-      // Attach user data to socket
+      // Attach user data to socket (frontend already authenticated via REST API)
       socket.user = {
-        user_id: profile.id,
-        email: profile.email,
-        name: profile.name,
-        role: profile.role,
-        college_id: profile.college_id,
-        avatar_url: profile.avatar_url
+        user_id: userId,
+        role: userRole,
+        college_id: collegeId
       };
 
+      console.log(`[Socket] User connected: ${userId} (${userRole})`);
       next();
     } catch (error) {
-      console.error('Socket authentication error:', error);
-      return next(new Error('Authentication error: Invalid token'));
+      console.error('[Socket] Connection error:', error);
+      return next(new Error('Connection failed'));
     }
   });
 

@@ -79,6 +79,7 @@ export const getConversationById = async (conversationId, userId) => {
  */
 export const getStudentConversations = async (studentId, collegeId) => {
   try {
+    // OPTIMIZED: Single query with JOINs instead of N+1 queries
     const { data, error } = await supabase
       .from('conversations')
       .select(`
@@ -88,7 +89,14 @@ export const getStudentConversations = async (studentId, collegeId) => {
         college_id,
         last_message_at,
         created_at,
-        updated_at
+        updated_at,
+        counsellor:profiles!conversations_counsellor_id_fkey(
+          id,
+          name,
+          email,
+          avatar_url,
+          counsellors(specialization)
+        )
       `)
       .eq('student_id', studentId)
       .eq('college_id', collegeId)
@@ -98,51 +106,47 @@ export const getStudentConversations = async (studentId, collegeId) => {
       throw error;
     }
 
-    // Get counsellor details and last message for each conversation
+    // Get last message and unread counts for all conversations in parallel
     const conversationsWithDetails = await Promise.all(
       data.map(async (conv) => {
-        // Get counsellor details
-        const { data: counsellor } = await supabase
-          .from('profiles')
-          .select(`
-            id,
-            name,
-            email,
-            avatar_url,
-            counsellors(specialization)
-          `)
-          .eq('id', conv.counsellor_id)
-          .single();
+        // Run last message and unread count queries in parallel
+        const [lastMessageResult, unreadCountResult] = await Promise.all([
+          supabase
+            .from('messages')
+            .select('message_text, created_at, sender_id, is_read, receiver_id')
+            .eq('conversation_id', conv.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle(), // Use maybeSingle to avoid error if no messages
+          
+          supabase
+            .from('messages')
+            .select('id', { count: 'exact', head: true })
+            .eq('conversation_id', conv.id)
+            .eq('receiver_id', studentId)
+            .eq('is_read', false)
+        ]);
 
-        // Get last message
-        const { data: lastMessage } = await supabase
-          .from('messages')
-          .select('message_text, created_at, sender_id')
-          .eq('conversation_id', conv.id)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single();
-
-        // Get unread count
-        const { count: unreadCount } = await supabase
-          .from('messages')
-          .select('id', { count: 'exact', head: true })
-          .eq('conversation_id', conv.id)
-          .eq('receiver_id', studentId)
-          .eq('is_read', false);
+        const lastMessage = lastMessageResult.data;
+        const unreadCount = unreadCountResult.count;
 
         return {
-          ...conv,
-          counsellor: {
-            id: counsellor?.id,
-            name: counsellor?.name,
-            email: counsellor?.email,
-            avatar_url: counsellor?.avatar_url,
-            specialization: counsellor?.counsellors?.specialization || null
-          },
+          id: conv.id,
+          student_id: conv.student_id,
+          counsellor_id: conv.counsellor_id,
+          college_id: conv.college_id,
+          last_message_at: conv.last_message_at,
+          created_at: conv.created_at,
+          updated_at: conv.updated_at,
+          counsellor_name: conv.counsellor?.name || 'Unknown',
+          counsellor_email: conv.counsellor?.email,
+          counsellor_avatar: conv.counsellor?.avatar_url,
+          counsellor_specialization: conv.counsellor?.counsellors?.specialization,
           last_message: lastMessage?.message_text || null,
           last_message_time: lastMessage?.created_at || conv.last_message_at,
           last_message_sender: lastMessage?.sender_id || null,
+          last_message_is_read: lastMessage ? Boolean(lastMessage.is_read) : null,
+          last_message_receiver: lastMessage?.receiver_id || null,
           unread_count: unreadCount || 0
         };
       })
@@ -160,6 +164,7 @@ export const getStudentConversations = async (studentId, collegeId) => {
  */
 export const getCounsellorConversations = async (counsellorId, collegeId) => {
   try {
+    // OPTIMIZED: Single query with JOINs
     const { data, error } = await supabase
       .from('conversations')
       .select(`
@@ -169,7 +174,13 @@ export const getCounsellorConversations = async (counsellorId, collegeId) => {
         college_id,
         last_message_at,
         created_at,
-        updated_at
+        updated_at,
+        student:profiles!conversations_student_id_fkey(
+          id,
+          name,
+          email,
+          avatar_url
+        )
       `)
       .eq('counsellor_id', counsellorId)
       .eq('college_id', collegeId)
@@ -179,49 +190,46 @@ export const getCounsellorConversations = async (counsellorId, collegeId) => {
       throw error;
     }
 
-    // Get student details and last message for each conversation
+    // Get last message and unread counts for all conversations in parallel
     const conversationsWithDetails = await Promise.all(
       data.map(async (conv) => {
-        // Get student details
-        const { data: student } = await supabase
-          .from('profiles')
-          .select(`
-            id,
-            name,
-            email,
-            avatar_url
-          `)
-          .eq('id', conv.student_id)
-          .single();
+        // Run queries in parallel
+        const [lastMessageResult, unreadCountResult] = await Promise.all([
+          supabase
+            .from('messages')
+            .select('message_text, created_at, sender_id, is_read, receiver_id')
+            .eq('conversation_id', conv.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle(),
+          
+          supabase
+            .from('messages')
+            .select('id', { count: 'exact', head: true })
+            .eq('conversation_id', conv.id)
+            .eq('receiver_id', counsellorId)
+            .eq('is_read', false)
+        ]);
 
-        // Get last message
-        const { data: lastMessage } = await supabase
-          .from('messages')
-          .select('message_text, created_at, sender_id')
-          .eq('conversation_id', conv.id)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single();
-
-        // Get unread count
-        const { count: unreadCount } = await supabase
-          .from('messages')
-          .select('id', { count: 'exact', head: true })
-          .eq('conversation_id', conv.id)
-          .eq('receiver_id', counsellorId)
-          .eq('is_read', false);
+        const lastMessage = lastMessageResult.data;
+        const unreadCount = unreadCountResult.count;
 
         return {
-          ...conv,
-          student: {
-            id: student?.id,
-            name: student?.name,
-            email: student?.email,
-            avatar_url: student?.avatar_url
-          },
+          id: conv.id,
+          student_id: conv.student_id,
+          counsellor_id: conv.counsellor_id,
+          college_id: conv.college_id,
+          last_message_at: conv.last_message_at,
+          created_at: conv.created_at,
+          updated_at: conv.updated_at,
+          student_name: conv.student?.name || 'Unknown',
+          student_email: conv.student?.email,
+          student_avatar: conv.student?.avatar_url,
           last_message: lastMessage?.message_text || null,
           last_message_time: lastMessage?.created_at || conv.last_message_at,
           last_message_sender: lastMessage?.sender_id || null,
+          last_message_is_read: lastMessage ? Boolean(lastMessage.is_read) : null,
+          last_message_receiver: lastMessage?.receiver_id || null,
           unread_count: unreadCount || 0
         };
       })
@@ -232,6 +240,9 @@ export const getCounsellorConversations = async (counsellorId, collegeId) => {
     console.error('Error in getCounsellorConversations:', error);
     return { data: null, error };
   }
+};
+
+/**
 };
 
 /**
@@ -257,7 +268,7 @@ export const getConversationMessages = async (conversationId, userId, page = 1, 
     // Calculate offset
     const offset = (page - 1) * limit;
 
-    // Get messages
+    // Get messages with sender info using JOIN (optimized)
     const { data: messages, error: messagesError, count } = await supabase
       .from('messages')
       .select(`
@@ -268,7 +279,12 @@ export const getConversationMessages = async (conversationId, userId, page = 1, 
         message_text,
         is_read,
         read_at,
-        created_at
+        created_at,
+        sender:profiles!messages_sender_id_fkey(
+          id,
+          name,
+          avatar_url
+        )
       `, { count: 'exact' })
       .eq('conversation_id', conversationId)
       .order('created_at', { ascending: false })
@@ -278,25 +294,19 @@ export const getConversationMessages = async (conversationId, userId, page = 1, 
       throw messagesError;
     }
 
-    // Get sender details for each message
-    const messagesWithSender = await Promise.all(
-      messages.map(async (msg) => {
-        const { data: sender } = await supabase
-          .from('profiles')
-          .select('id, name, avatar_url')
-          .eq('id', msg.sender_id)
-          .single();
-
-        return {
-          ...msg,
-          sender: {
-            id: sender?.id,
-            name: sender?.name,
-            avatar_url: sender?.avatar_url
-          }
-        };
-      })
-    );
+    // Format messages (sender already included via JOIN)
+    const messagesWithSender = messages.map(msg => ({
+      id: msg.id,
+      conversation_id: msg.conversation_id,
+      sender_id: msg.sender_id,
+      receiver_id: msg.receiver_id,
+      message_text: msg.message_text,
+      is_read: msg.is_read,
+      read_at: msg.read_at,
+      created_at: msg.created_at,
+      sender_name: msg.sender?.name,
+      sender_avatar: msg.sender?.avatar_url
+    }));
 
     return {
       data: {

@@ -366,24 +366,7 @@ export const getUserDetails = async (req, res) => {
         phone,
         bio,
         created_at,
-        updated_at,
-        assessment_submissions (
-          id,
-          score,
-          severity,
-          created_at,
-          assessment_forms (
-            name,
-            title
-          )
-        ),
-        appointments (
-          id,
-          date,
-          time,
-          status,
-          type
-        )
+        updated_at
       `)
       .eq('id', user_id)
       .eq('college_id', req.tenant)

@@ -14,6 +14,7 @@ import {
   getTypingUsers,
   typingUsers
 } from '../config/socket.js';
+import { supabase } from '../config/supabase.js';
 
 /**
  * Initialize Socket.io event handlers
@@ -22,15 +23,19 @@ import {
 export const initializeSocketHandlers = (io) => {
   io.on('connection', (socket) => {
     const userId = socket.user.user_id;
-    const userName = socket.user.name;
+    const userRole = socket.user.role;
+    const userName = socket.user.name || 'User';
     
-    console.log(`User connected: ${userName} (${userId})`);
+    console.log(`User connected: ${userId} (${userRole})`);
 
     // Add user to active users
     addActiveUser(userId, socket.id);
 
-    // Notify user about their online status
-    socket.broadcast.emit('online_status', { userId, online: true });
+    // Notify ALL users about this user's online status
+    io.emit('user_online_status', { 
+      user_id: userId, 
+      online: true 
+    });
 
     // Join user to their personal room
     socket.join(`user:${userId}`);
@@ -70,10 +75,13 @@ export const initializeSocketHandlers = (io) => {
           ? conversation.counsellor_id 
           : conversation.student_id;
         
+        // Emit to the sender's room so they see checkmarks
         io.to(`user:${otherUserId}`).emit('messages_read', {
           conversation_id,
           reader_id: userId
         });
+        
+        console.log(`[Socket] Messages read in conversation ${conversation_id} by ${userId}, notifying ${otherUserId}`);
 
         // Update unread count for the user who joined (if messages were marked as read)
         if (readMessages && readMessages.length > 0) {
@@ -163,11 +171,25 @@ export const initializeSocketHandlers = (io) => {
           }
         });
 
-        // Update unread count for receiver (increment by 1)
-        const { data: receiverUnreadData } = await getUnreadMessageCount(receiver_id);
-        io.to(`user:${receiver_id}`).emit('unread_count_updated', {
-          count: receiverUnreadData?.count || 0
-        });
+        // Update unread count for receiver - emit per-conversation data
+        // Get unread count for this specific conversation
+        const { count: unreadCount, error: unreadError } = await supabase
+          .from('messages')
+          .select('id', { count: 'exact', head: true })
+          .eq('conversation_id', conversation_id)
+          .eq('receiver_id', receiver_id)
+          .eq('is_read', false);
+
+        const unreadData = {
+          conversation_id,
+          unread_count: unreadCount || 0,
+          last_message: message_text.trim(),
+          last_message_at: new Date().toISOString(),
+          last_message_sender: userId,
+        };
+
+        console.log(`[Socket] Emitting unread_count_updated to user:${receiver_id}:`, unreadData);
+        io.to(`user:${receiver_id}`).emit('unread_count_updated', unreadData);
 
         console.log(`Message sent from ${userName} in conversation ${conversation_id}`);
       } catch (error) {
@@ -290,7 +312,7 @@ export const initializeSocketHandlers = (io) => {
      * Handle user disconnection
      */
     socket.on('disconnect', () => {
-      console.log(`User disconnected: ${userName} (${userId})`);
+      console.log(`User disconnected: ${userId} (${userRole})`);
       
       // Remove user from active users
       removeActiveUser(userId, socket.id);
@@ -313,8 +335,8 @@ export const initializeSocketHandlers = (io) => {
           }
         });
         
-        // Notify all conversations that the user is offline
-        io.emit('user_offline', {
+        // Notify all users that this user is offline
+        io.emit('user_online_status', {
           user_id: userId,
           online: false
         });
