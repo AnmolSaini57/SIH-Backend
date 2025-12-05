@@ -18,10 +18,20 @@ class CommunityController {
       const userId = req.user.id;
       const collegeId = req.user.college_id;
 
+      console.log('🔍 [DEBUG] Student Communities Request:');
+      console.log('   User ID:', userId);
+      console.log('   College ID:', collegeId);
+      console.log('   User Role:', req.user.role);
+      console.log('   Full req.user:', JSON.stringify(req.user, null, 2));
+
       const communities = await communityService.getAllCommunities(userId, collegeId);
+      
+      console.log(' [DEBUG] Communities fetched:', communities.length, 'communities');
+      console.log('   Community IDs:', communities.map(c => c.id));
+      
       return successResponse(res, communities, 'Communities fetched successfully');
     } catch (error) {
-      console.error('Error fetching student communities:', error);
+      console.error(' Error fetching student communities:', error);
       return errorResponse(res, error.message);
     }
   }

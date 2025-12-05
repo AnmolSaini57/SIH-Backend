@@ -63,14 +63,26 @@ class CommunityService {
    * Get all communities for a college with member count and join status
    */
   async getAllCommunities(userId, collegeId) {
+    console.log(' [CommunityService] getAllCommunities called:');
+    console.log('   User ID:', userId);
+    console.log('   College ID:', collegeId);
+
     // Get all communities for the college
     const { data: communities, error: communitiesError } = await supabase
       .from('communities')
-      .select('id, title, description, created_at, updated_at')
+      .select('id, title, description, created_at, updated_at, college_id')
       .eq('college_id', collegeId)
       .order('created_at', { ascending: false });
 
-    if (communitiesError) throw communitiesError;
+    console.log('   Query result - Communities found:', communities?.length || 0);
+    if (communities && communities.length > 0) {
+      console.log('   First community:', JSON.stringify(communities[0], null, 2));
+    }
+
+    if (communitiesError) {
+      console.error('   ❌ Error fetching communities:', communitiesError);
+      throw communitiesError;
+    }
 
     // Get member counts for each community
     const communityIds = communities.map(c => c.id);
@@ -290,14 +302,7 @@ class CommunityService {
         sender_role,
         created_at,
         sender_id,
-        profiles!community_messages_sender_id_fkey (
-          id,
-          name,
-          role
-        ),
-        students!inner (
-          anonymous_username
-        )
+        community_id
       `)
       .eq('community_id', communityId)
       .order('created_at', { ascending: false })
@@ -331,7 +336,7 @@ class CommunityService {
           sender_id: msg.sender_id,
         };
 
-        // If sender is a student, get anonymous username
+        // If sender is a student, get anonymous username from community_members
         if (msg.sender_role === 'student') {
           const { data: student } = await supabase
             .from('students')
@@ -341,8 +346,14 @@ class CommunityService {
 
           messageData.anonymous_username = student?.anonymous_username || 'Anonymous';
         } else {
-          // For counsellor and admin, include their real name
-          messageData.username = msg.profiles?.name || 'Unknown';
+          // For counsellor and admin, get their real name from profiles
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('name, email')
+            .eq('id', msg.sender_id)
+            .single();
+
+          messageData.username = profile?.name || profile?.email || 'Admin';
         }
 
         return messageData;
@@ -379,6 +390,7 @@ class CommunityService {
     const messageData = { ...data };
 
     if (userRole === 'student') {
+      // Get anonymous username from students table
       const { data: student } = await supabase
         .from('students')
         .select('anonymous_username')
@@ -389,11 +401,11 @@ class CommunityService {
     } else {
       const { data: profile } = await supabase
         .from('profiles')
-        .select('name')
+        .select('name, email')
         .eq('id', userId)
         .single();
 
-      messageData.username = profile?.name || 'Unknown';
+      messageData.username = profile?.name || profile?.email || 'Admin';
     }
 
     return messageData;

@@ -31,7 +31,8 @@ export default async function auth(req, res, next) {
       
       // Token is valid, extract user information
       req.user = {
-        user_id: decoded.sub,
+        id: decoded.sub,  // Using 'id' for consistency with controllers
+        user_id: decoded.sub,  // Keep for backward compatibility
         email: decoded.email,
         role: decoded.user_metadata?.role || decoded.app_metadata?.role || 'student',
         college_id: decoded.user_metadata?.college_id || decoded.app_metadata?.college_id || null,
@@ -79,7 +80,8 @@ export default async function auth(req, res, next) {
       const decodedNew = jwt.decode(session.access_token);
       
       req.user = {
-        user_id: decodedNew.sub,
+        id: decodedNew.sub,  // Using 'id' for consistency with controllers
+        user_id: decodedNew.sub,  // Keep for backward compatibility
         email: decodedNew.email,
         role: decodedNew.user_metadata?.role || decodedNew.app_metadata?.role || 'student',
         college_id: decodedNew.user_metadata?.college_id || decodedNew.app_metadata?.college_id || null,
@@ -88,7 +90,7 @@ export default async function auth(req, res, next) {
         iat: decodedNew.iat
       };
 
-      console.log('Token refreshed successfully for user:', req.user.user_id);
+      console.log('Token refreshed successfully for user:', req.user.id);
       return next();
     }
   } catch (error) {

@@ -45,7 +45,7 @@ export const login = async (req, res) => {
         created_at,
         colleges (
           id,
-          name,
+          name
         )
       `)
       .eq('id', user.id)

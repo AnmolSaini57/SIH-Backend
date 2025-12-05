@@ -9,21 +9,50 @@ export const initializeCommunitySocket = (io) => {
   // Create a namespace for community chat
   const communityNamespace = io.of('/community');
 
+  // Add authentication middleware for the community namespace
+  communityNamespace.use(async (socket, next) => {
+    try {
+      const { userId, userRole, collegeId } = socket.handshake.auth;
+      
+      console.log('[Community] Auth check:', {
+        userId: userId || 'MISSING',
+        userRole: userRole || 'MISSING',
+        collegeId: collegeId || 'MISSING'
+      });
+      
+      if (!userId || !userRole || !collegeId) {
+        console.error('[Community] Missing authentication data:', { 
+          hasUserId: !!userId, 
+          hasUserRole: !!userRole, 
+          hasCollegeId: !!collegeId 
+        });
+        return next(new Error('Authentication required - missing userId, userRole, or collegeId'));
+      }
+
+      // Attach user data to socket
+      socket.user = {
+        id: userId,
+        user_id: userId,
+        role: userRole,
+        college_id: collegeId
+      };
+
+      console.log(`[Community] Authentication successful: userId=${userId}, role=${userRole}, college=${collegeId}`);
+      next();
+    } catch (error) {
+      console.error('[Community] Authentication error:', error);
+      return next(new Error('Authentication failed'));
+    }
+  });
+
   communityNamespace.on('connection', async (socket) => {
     console.log(`[Community] User connected: ${socket.id}`);
 
-    const userId = socket.handshake.auth.userId;
-    const userRole = socket.handshake.auth.userRole;
-    const collegeId = socket.handshake.auth.collegeId;
+    const userId = socket.user.id;
+    const userRole = socket.user.role;
+    const collegeId = socket.user.college_id;
 
-    if (!userId || !userRole || !collegeId) {
-      console.error('[Community] Missing authentication data');
-      socket.emit('error', { message: 'Authentication required' });
-      socket.disconnect();
-      return;
-    }
-
-    console.log(`[Community] Authenticated: userId=${userId}, role=${userRole}, college=${collegeId}`);
+    console.log(`[Community] Connection established: userId=${userId}, role=${userRole}, college=${collegeId}`);
 
     /**
      * Join a community room

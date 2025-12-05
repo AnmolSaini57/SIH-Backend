@@ -29,7 +29,7 @@ export const getAssessmentGuidance = async ({ formType, responses, score, severi
   try {
     const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
-    // Strict, concise, and fast prompt
+
     const prompt = `You are a supportive mental health assistant for a college student wellbeing platform.
 Your job is to provide compassionate, brief, and practical guidance based on a mental health assessment.
 
