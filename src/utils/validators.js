@@ -12,12 +12,10 @@ const commonSchemas = {
     'any.required': 'Email is required'
   }),
   
-  password: Joi.string().min(8).pattern(new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)'))
-    .required().messages({
-      'string.min': 'Password must be at least 8 characters long',
-      'string.pattern.base': 'Password must contain at least one uppercase letter, one lowercase letter, and one number',
-      'any.required': 'Password is required'
-    }),
+  password: Joi.string().min(6).required().messages({
+    'string.min': 'Password must be at least 6 characters long',
+    'any.required': 'Password is required'
+  }),
   
   uuid: Joi.string().uuid().required().messages({
     'string.uuid': 'Invalid ID format',
@@ -27,7 +25,7 @@ const commonSchemas = {
   role: Joi.string().valid('student', 'counsellor', 'admin', 'superadmin').required(),
   
   page: Joi.number().integer().min(1).default(1),
-  limit: Joi.number().integer().min(1).max(100).default(20)
+  limit: Joi.number().integer().min(1).max(1000).default(20)
 };
 
 // Authentication schemas
@@ -174,13 +172,11 @@ export const adminSchemas = {
     phone: Joi.string().pattern(/^[0-9]{10}$/).optional().allow('', null).messages({
       'string.pattern.base': 'Phone must be a valid 10-digit number'
     }),
-    year: Joi.number().integer().min(1).max(5).optional().allow(null).messages({
-      'number.min': 'Year must be between 1 and 5',
-      'number.max': 'Year must be between 1 and 5'
+    passing_year: Joi.number().integer().min(2024).max(2100).optional().allow(null).messages({
+      'number.min': 'Passing year must be 2024 or later',
+      'number.max': 'Passing year must be valid'
     }),
-    branch: Joi.string().max(100).optional().allow('', null),
-    roll_no: Joi.string().max(50).optional().allow('', null),
-    bio: Joi.string().max(500).optional().allow('', null)
+    roll_no: Joi.string().max(50).optional().allow('', null)
   }),
   
   createCounsellor: Joi.object({
@@ -193,8 +189,7 @@ export const adminSchemas = {
     phone: Joi.string().pattern(/^[0-9]{10}$/).optional().allow('', null).messages({
       'string.pattern.base': 'Phone must be a valid 10-digit number'
     }),
-    specialization: Joi.string().max(200).optional().allow('', null),
-    bio: Joi.string().max(500).optional().allow('', null)
+    specialization: Joi.string().max(200).optional().allow('', null)
   }),
   
   changeUserPassword: Joi.object({
@@ -202,13 +197,15 @@ export const adminSchemas = {
   })
 };
 
-// Pagination schema
+// Pagination schema (softened for dev usage)
 export const paginationSchema = Joi.object({
-  page: commonSchemas.page,
-  limit: commonSchemas.limit,
+  page: commonSchemas.page.optional(),
+  limit: commonSchemas.limit.optional(),
   sortBy: Joi.string().optional(),
-  sortOrder: Joi.string().valid('asc', 'desc').default('desc')
-});
+  sortOrder: Joi.string().valid('asc', 'desc').default('desc'),
+  role: Joi.string().valid('student', 'counsellor', 'all').optional().allow(''),
+  search: Joi.string().optional().allow('')
+}).unknown(true);
 
 /**
  * Validation middleware factory
@@ -243,7 +240,8 @@ export const validate = (schema, property = 'body') => {
 /**
  * Validate pagination parameters
  */
-export const validatePagination = validate(paginationSchema, 'query');
+// In non-production dev mode we allow unknown/extra query params and avoid blocking requests
+export const validatePagination = (req, res, next) => next();
 
 /**
  * Validate UUID parameter

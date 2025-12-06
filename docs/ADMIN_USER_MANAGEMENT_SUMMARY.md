@@ -18,7 +18,21 @@ Added comprehensive Joi validation schemas for:
 - **changeUserPassword**: Validates new password with security requirements
 
 ### 2. Controller Functions (admin.controller.js)
-Implemented four new controller functions:
+Implemented user management controller functions:
+
+#### `getUserStats(req, res)`
+- Returns total count of users (students + counsellors)
+- Returns total count of students
+- Returns total count of counsellors
+- All stats are scoped to admin's college
+- Uses parallel queries for optimal performance
+
+#### `getUsers(req, res)`
+- Retrieves all users in admin's college with pagination
+- Includes roll_no for students via left join with students table
+- Supports filtering by role (student, counsellor, or all)
+- Supports search by name or email
+- Returns paginated response with user details
 
 #### `createStudent(req, res)`
 - Creates user in Supabase Auth with auto-confirmed email
@@ -50,9 +64,11 @@ Implemented four new controller functions:
 - Returns success confirmation
 
 ### 3. API Routes (admin.routes.js)
-Added four new routes with proper validation:
+Added user management routes with proper validation:
 
 ```javascript
+GET    /api/admin/users/stats          - Get user statistics
+GET    /api/admin/users                - Get all users (with pagination)
 POST   /api/admin/users/students       - Create student
 POST   /api/admin/users/counsellors    - Create counsellor
 DELETE /api/admin/users/:user_id       - Delete user
@@ -187,12 +203,92 @@ The backend implementation is complete. To fully integrate this functionality:
 
 ## How to Use
 
+### Get User Statistics
+```http
+GET /api/admin/users/stats
+Authorization: Cookie (sb-access-token)
+```
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "message": "User statistics retrieved successfully",
+  "data": {
+    "totalUsers": 150,
+    "totalStudents": 120,
+    "totalCounsellors": 30
+  }
+}
+```
+
+### Get All Users
+```http
+GET /api/admin/users?page=1&limit=20&role=student&search=john
+Authorization: Cookie (sb-access-token)
+```
+
+**Query Parameters**:
+- `page` (optional, default: 1) - Page number
+- `limit` (optional, default: 20) - Items per page
+- `role` (optional) - Filter by role: 'student', 'counsellor', or 'all'
+- `search` (optional) - Search by name or email
+
+**Response (200 OK)**:
+```json
+{
+  "success": true,
+  "message": "Data retrieved successfully",
+  "data": [
+    {
+      "id": "uuid",
+      "email": "student@college.edu",
+      "name": "John Doe",
+      "role": "student",
+      "avatar_url": null,
+      "phone": "+1234567890",
+      "roll_no": "CS2021001",
+      "created_at": "2024-01-15T10:00:00Z",
+      "updated_at": "2024-01-15T10:00:00Z"
+    },
+    {
+      "id": "uuid",
+      "email": "counsellor@college.edu",
+      "name": "Dr. Jane Smith",
+      "role": "counsellor",
+      "avatar_url": null,
+      "phone": "+1234567891",
+      "roll_no": null,
+      "created_at": "2024-01-15T10:00:00Z",
+      "updated_at": "2024-01-15T10:00:00Z"
+    }
+  ],
+  "pagination": {
+    "currentPage": 1,
+    "totalPages": 8,
+    "totalItems": 150,
+    "itemsPerPage": 20
+  }
+}
+```
+
+**Notes**:
+- `roll_no` is only populated for students (null for counsellors)
+- Results are ordered by `created_at` descending (newest first)
+
+### Create Student/Counsellor, Delete User, Change Password
+(See below for existing documentation)
+
+---
+
 Admins can now:
 
-1. **Add a student**: POST to `/api/admin/users/students` with student details
-2. **Add a counsellor**: POST to `/api/admin/users/counsellors` with counsellor details
-3. **Delete a user**: DELETE to `/api/admin/users/:user_id`
-4. **Reset password**: PUT to `/api/admin/users/:user_id/password` with new password
+1. **View user statistics**: GET to `/api/admin/users/stats` to see total users, students, and counsellors
+2. **View all users**: GET to `/api/admin/users` with optional filters and pagination (includes roll_no for students)
+3. **Add a student**: POST to `/api/admin/users/students` with student details
+4. **Add a counsellor**: POST to `/api/admin/users/counsellors` with counsellor details
+5. **Delete a user**: DELETE to `/api/admin/users/:user_id`
+6. **Reset password**: PUT to `/api/admin/users/:user_id/password` with new password
 
 Created users can immediately sign in using their email and the password set by the admin.
 

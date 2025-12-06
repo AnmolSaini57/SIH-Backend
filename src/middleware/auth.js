@@ -29,13 +29,26 @@ export default async function auth(req, res, next) {
     try {
       const decoded = jwt.verify(accessToken, process.env.SUPABASE_JWT_SECRET);
       
-      // Token is valid, extract user information
+      // Token is valid, extract user information from JWT
+      let collegeId = decoded.user_metadata?.college_id || decoded.app_metadata?.college_id || null;
+      
+      // If college_id not in JWT, fetch from profiles table
+      if (!collegeId) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('college_id')
+          .eq('id', decoded.sub)
+          .single();
+        
+        collegeId = profile?.college_id || null;
+      }
+      
       req.user = {
         id: decoded.sub,  // Using 'id' for consistency with controllers
         user_id: decoded.sub,  // Keep for backward compatibility
         email: decoded.email,
         role: decoded.user_metadata?.role || decoded.app_metadata?.role || 'student',
-        college_id: decoded.user_metadata?.college_id || decoded.app_metadata?.college_id || null,
+        college_id: collegeId,
         aud: decoded.aud,
         exp: decoded.exp,
         iat: decoded.iat
@@ -79,12 +92,25 @@ export default async function auth(req, res, next) {
       // Decode the new access token
       const decodedNew = jwt.decode(session.access_token);
       
+      // If college_id not in JWT, fetch from profiles table
+      let collegeId = decodedNew.user_metadata?.college_id || decodedNew.app_metadata?.college_id || null;
+      
+      if (!collegeId) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('college_id')
+          .eq('id', decodedNew.sub)
+          .single();
+        
+        collegeId = profile?.college_id || null;
+      }
+      
       req.user = {
         id: decodedNew.sub,  // Using 'id' for consistency with controllers
         user_id: decodedNew.sub,  // Keep for backward compatibility
         email: decodedNew.email,
         role: decodedNew.user_metadata?.role || decodedNew.app_metadata?.role || 'student',
-        college_id: decodedNew.user_metadata?.college_id || decodedNew.app_metadata?.college_id || null,
+        college_id: collegeId,
         aud: decodedNew.aud,
         exp: decodedNew.exp,
         iat: decodedNew.iat

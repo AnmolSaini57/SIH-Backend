@@ -303,12 +303,53 @@ async function generateAppointmentsReport(collegeId, fromDate) {
 ///////////////////// USER MANAGEMENT /////////////////////////
 
 /**
+ * Get user statistics for the college
+ */
+export const getUserStats = async (req, res) => {
+  try {
+    const [{ count: totalUsers }, { count: totalStudents }, { count: totalCounsellors }] =
+      await Promise.all([
+        supabase
+          .from('profiles')
+          .select('*', { count: 'exact', head: true })
+          .eq('college_id', req.tenant)
+          .in('role', ['student', 'counsellor']),
+
+        supabase
+          .from('profiles')
+          .select('*', { count: 'exact', head: true })
+          .eq('college_id', req.tenant)
+          .eq('role', 'student'),
+
+        supabase
+          .from('profiles')
+          .select('*', { count: 'exact', head: true })
+          .eq('college_id', req.tenant)
+          .eq('role', 'counsellor')
+      ]);
+
+    const stats = {
+      totalUsers,
+      totalStudents,
+      totalCounsellors
+    };
+
+    return successResponse(res, stats, 'User statistics retrieved successfully');
+  } catch (error) {
+    console.error('Get user statistics error:', error);
+    return errorResponse(res, 'Failed to get user statistics', 500);
+  }
+};
+
+/**
  * Get all users in the college
  */
 export const getUsers = async (req, res) => {
   try {
     const { page = 1, limit = 20, role, search } = req.query;
     const offset = (page - 1) * limit;
+
+    console.log('getUsers called with params:', { page, limit, role, search }); // Debug log
 
     let query = supabase
       .from('profiles')
@@ -320,15 +361,28 @@ export const getUsers = async (req, res) => {
         avatar_url,
         phone,
         created_at,
-        updated_at
+        updated_at,
+        students (
+          roll_no,
+          year
+        ),
+        counsellors (
+          specialization
+        )
       `, { count: 'exact' })
       .eq('college_id', req.tenant);
 
+    // Apply role filter
     if (role && role !== 'all') {
+      console.log('Filtering by role:', role); // Debug log
       query = query.eq('role', role);
+    } else {
+      // If no specific role filter, show only students and counsellors (exclude admin/superadmin)
+      query = query.in('role', ['student', 'counsellor']);
     }
 
     if (search) {
+      console.log('Searching for:', search); // Debug log
       query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%`);
     }
 
@@ -341,7 +395,21 @@ export const getUsers = async (req, res) => {
       return errorResponse(res, formattedError.message, 400);
     }
 
-    return paginatedResponse(res, data, page, limit, count);
+    console.log('Raw data from DB:', JSON.stringify(data, null, 2)); // Debug log
+
+    // Format response to flatten roll_no and year for students, specialization for counsellors
+    const formattedData = data.map((user) => ({
+      ...user,
+      roll_no: user.students?.roll_no || null,
+      year: user.students?.year || null,
+      specialization: user.counsellors?.specialization || null,
+      students: undefined, // Remove the nested students object
+      counsellors: undefined // Remove the nested counsellors object
+    }));
+
+    console.log('Formatted data:', JSON.stringify(formattedData, null, 2)); // Debug log
+
+    return paginatedResponse(res, formattedData, page, limit, count);
   } catch (error) {
     console.error('Get users error:', error);
     return errorResponse(res, 'Failed to get users', 500);
@@ -390,8 +458,10 @@ export const getUserDetails = async (req, res) => {
  */
 export const createStudent = async (req, res) => {
   try {
-    const { name, email, password, phone, year, branch, roll_no, bio } = req.body;
+    const { name, email, password, phone, passing_year, roll_no } = req.body;
     const collegeId = req.tenant;
+
+    console.log('Creating student with data:', { name, email, phone, passing_year, roll_no });
 
     // Check if email already exists
     const { data: existingUser } = await supabase
@@ -429,6 +499,21 @@ export const createStudent = async (req, res) => {
       return errorResponse(res, `Failed to create user account: ${authError.message}`, 400);
     }
 
+    // Update auth user metadata with college_id and role
+    const { error: metadataError } = await supabase.auth.admin.updateUserById(authUser.user.id, {
+      user_metadata: {
+        college_id: collegeId,
+        role: 'student'
+      }
+    });
+
+    if (metadataError) {
+      console.error('Failed to update user metadata:', metadataError);
+      // Rollback: Delete the auth user
+      await supabase.auth.admin.deleteUser(authUser.user.id);
+      return errorResponse(res, `Failed to set user metadata: ${metadataError.message}`, 400);
+    }
+
     // Create profile entry
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
@@ -438,8 +523,7 @@ export const createStudent = async (req, res) => {
         email,
         role: 'student',
         college_id: collegeId,
-        phone: phone || null,
-        bio: bio || null
+        phone: phone || null
       })
       .select()
       .single();
@@ -456,8 +540,7 @@ export const createStudent = async (req, res) => {
       .from('students')
       .insert({
         id: authUser.user.id,
-        year: year || null,
-        branch: branch || null,
+        year: passing_year || null,
         roll_no: roll_no || null
         // anonymous_username will be set by the student later
       })
@@ -466,6 +549,7 @@ export const createStudent = async (req, res) => {
 
     if (studentError) {
       console.error('Student entry creation error:', studentError);
+      console.error('Error details:', JSON.stringify(studentError, null, 2));
       // Rollback: Delete profile and auth user
       await supabase.from('profiles').delete().eq('id', authUser.user.id);
       await supabase.auth.admin.deleteUser(authUser.user.id);
@@ -477,8 +561,7 @@ export const createStudent = async (req, res) => {
       name,
       email,
       role: 'student',
-      year,
-      branch,
+      passing_year,
       roll_no
     }, 'Student created successfully', 201);
   } catch (error) {
@@ -493,8 +576,10 @@ export const createStudent = async (req, res) => {
  */
 export const createCounsellor = async (req, res) => {
   try {
-    const { name, email, password, phone, specialization, bio } = req.body;
+    const { name, email, password, phone, specialization } = req.body;
     const collegeId = req.tenant;
+
+    console.log('Creating counsellor with data:', { name, email, phone, specialization });
 
     // Check if email already exists
     const { data: existingUser } = await supabase
@@ -519,6 +604,21 @@ export const createCounsellor = async (req, res) => {
       return errorResponse(res, `Failed to create user account: ${authError.message}`, 400);
     }
 
+    // Update auth user metadata with college_id and role
+    const { error: metadataError } = await supabase.auth.admin.updateUserById(authUser.user.id, {
+      user_metadata: {
+        college_id: collegeId,
+        role: 'counsellor'
+      }
+    });
+
+    if (metadataError) {
+      console.error('Failed to update user metadata:', metadataError);
+      // Rollback: Delete the auth user
+      await supabase.auth.admin.deleteUser(authUser.user.id);
+      return errorResponse(res, `Failed to set user metadata: ${metadataError.message}`, 400);
+    }
+
     // Create profile entry
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
@@ -528,8 +628,7 @@ export const createCounsellor = async (req, res) => {
         email,
         role: 'counsellor',
         college_id: collegeId,
-        phone: phone || null,
-        bio: bio || null
+        phone: phone || null
       })
       .select()
       .single();
@@ -601,34 +700,107 @@ export const deleteUser = async (req, res) => {
       return errorResponse(res, 'Cannot delete admin or superadmin accounts', 403);
     }
 
-    // Delete role-specific entry first (student or counsellor)
-    if (user.role === 'student') {
-      await supabase.from('students').delete().eq('id', user_id);
-    } else if (user.role === 'counsellor') {
-      await supabase.from('counsellors').delete().eq('id', user_id);
+    console.log(`Starting deletion process for user ${user_id} (${user.role})`);
+
+    try {
+      // Delete related records in correct order to avoid FK constraints
+      
+      // 1. Delete AI conversations and messages
+      const { data: conversations } = await supabase
+        .from('ai_conversations')
+        .select('id')
+        .eq('user_id', user_id);
+      
+      if (conversations && conversations.length > 0) {
+        const conversationIds = conversations.map(c => c.id);
+        await supabase.from('ai_messages').delete().in('conversation_id', conversationIds);
+        await supabase.from('ai_conversations').delete().eq('user_id', user_id);
+        console.log(`Deleted ${conversations.length} AI conversations`);
+      }
+
+      // 2. Delete messages (as sender or receiver)
+      await supabase.from('messages').delete().eq('sender_id', user_id);
+      await supabase.from('messages').delete().eq('receiver_id', user_id);
+      console.log('Deleted messages');
+
+      // 3. Delete community-related data
+      await supabase.from('community_messages').delete().eq('sender_id', user_id);
+      await supabase.from('community_members').delete().eq('user_id', user_id);
+      console.log('Deleted community data');
+
+      // 4. Delete conversations (as student or counsellor)
+      await supabase.from('conversations').delete().eq('student_id', user_id);
+      await supabase.from('conversations').delete().eq('counsellor_id', user_id);
+      console.log('Deleted conversations');
+
+      if (user.role === 'student') {
+        // 5. Delete student-specific data
+        await supabase.from('assessments').delete().eq('student_id', user_id);
+        await supabase.from('daily_checkins').delete().eq('student_id', user_id);
+        await supabase.from('weekly_checkins').delete().eq('student_id', user_id);
+        await supabase.from('worries_journal').delete().eq('student_id', user_id);
+        console.log('Deleted student journal and assessment data');
+
+        // 6. Delete appointments (as student)
+        await supabase.from('appointments').delete().eq('student_id', user_id);
+        console.log('Deleted student appointments');
+
+        // 7. Delete student record
+        const { error: studentError } = await supabase.from('students').delete().eq('id', user_id);
+        if (studentError) {
+          console.error('Student deletion error:', studentError);
+          return errorResponse(res, `Failed to delete student record: ${studentError.message}`, 400);
+        }
+        console.log('Deleted student record');
+      } else if (user.role === 'counsellor') {
+        // 5. Delete counsellor-specific data
+        await supabase.from('counsellor_resources').delete().eq('counsellor_id', user_id);
+        await supabase.from('counsellor_availability').delete().eq('counsellor_id', user_id);
+        console.log('Deleted counsellor resources and availability');
+
+        // 6. Delete appointments (as counsellor)
+        await supabase.from('appointments').delete().eq('counsellor_id', user_id);
+        console.log('Deleted counsellor appointments');
+
+        // 7. Delete counsellor record
+        const { error: counsellorError } = await supabase.from('counsellors').delete().eq('id', user_id);
+        if (counsellorError) {
+          console.error('Counsellor deletion error:', counsellorError);
+          return errorResponse(res, `Failed to delete counsellor record: ${counsellorError.message}`, 400);
+        }
+        console.log('Deleted counsellor record');
+      }
+
+      // 8. Delete communities created by user (optional - might want to keep these)
+      // await supabase.from('communities').delete().eq('created_by', user_id);
+
+      // 9. Delete profile
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', user_id);
+
+      if (profileError) {
+        console.error('Profile deletion error:', profileError);
+        return errorResponse(res, `Failed to delete user profile: ${profileError.message}`, 400);
+      }
+      console.log('Deleted profile');
+
+      // 10. Delete from Supabase Auth
+      const { error: authError } = await supabase.auth.admin.deleteUser(user_id);
+
+      if (authError) {
+        console.error('Auth user deletion error:', authError);
+        console.warn('User profile deleted but auth user deletion failed');
+      } else {
+        console.log('Deleted auth user');
+      }
+
+      return successResponse(res, null, 'User and all related data deleted successfully');
+    } catch (deletionError) {
+      console.error('Error during user deletion:', deletionError);
+      return errorResponse(res, `Failed to delete user: ${deletionError.message}`, 500);
     }
-
-    // Delete profile
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .delete()
-      .eq('id', user_id);
-
-    if (profileError) {
-      console.error('Profile deletion error:', profileError);
-      return errorResponse(res, `Failed to delete user profile: ${profileError.message}`, 400);
-    }
-
-    // Delete from Supabase Auth
-    const { error: authError } = await supabase.auth.admin.deleteUser(user_id);
-
-    if (authError) {
-      console.error('Auth user deletion error:', authError);
-      // Profile is already deleted, but log the auth deletion failure
-      console.warn('User profile deleted but auth user deletion failed');
-    }
-
-    return successResponse(res, null, 'User deleted successfully');
   } catch (error) {
     console.error('Delete user error:', error);
     return errorResponse(res, 'Failed to delete user', 500);
@@ -645,6 +817,13 @@ export const changeUserPassword = async (req, res) => {
     const { new_password } = req.body;
     const collegeId = req.tenant;
 
+    console.log('Change password request:', { user_id, new_password: '***', collegeId });
+
+    // Validate new_password exists
+    if (!new_password || new_password.trim() === '') {
+      return errorResponse(res, 'New password is required and cannot be empty', 400);
+    }
+
     // Verify user exists and belongs to the admin's college
     const { data: user, error: userError } = await supabase
       .from('profiles')
@@ -653,6 +832,7 @@ export const changeUserPassword = async (req, res) => {
       .single();
 
     if (userError || !user) {
+      console.log('User not found error:', userError);
       return notFoundResponse(res, 'User not found');
     }
 
@@ -665,6 +845,8 @@ export const changeUserPassword = async (req, res) => {
       return errorResponse(res, 'Cannot change password for admin or superadmin accounts', 403);
     }
 
+    console.log('Updating password for user:', user_id);
+
     // Update password in Supabase Auth
     const { data, error: authError } = await supabase.auth.admin.updateUserById(
       user_id,
@@ -673,12 +855,15 @@ export const changeUserPassword = async (req, res) => {
 
     if (authError) {
       console.error('Password update error:', authError);
+      console.error('Error details:', JSON.stringify(authError, null, 2));
       return errorResponse(res, `Failed to update password: ${authError.message}`, 400);
     }
 
+    console.log('Password updated successfully for user:', user_id);
     return successResponse(res, null, 'Password updated successfully');
   } catch (error) {
     console.error('Change user password error:', error);
+    console.error('Error details:', JSON.stringify(error, null, 2));
     return errorResponse(res, 'Failed to change password', 500);
   }
 };

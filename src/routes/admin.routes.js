@@ -1,6 +1,7 @@
 import express from 'express';
 import {
   getDashboardStats,
+  getUserStats,
   getUsers,
   getUserDetails,
   createStudent,
@@ -42,6 +43,9 @@ router.put('/profile',
 );
 
 /////////////// USER MANAGEMENT /////////////////////
+// Get user statistics
+router.get('/users/stats', getUserStats);
+
 router.get('/users', 
   validatePagination, 
   getUsers

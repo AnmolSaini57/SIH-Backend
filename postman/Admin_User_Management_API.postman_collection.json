@@ -6,20 +6,36 @@
   },
   "item": [
     {
+      "name": "Get User Statistics",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/admin/users/stats",
+          "host": ["{{base_url}}"],
+          "path": ["api", "admin", "users", "stats"]
+        },
+        "description": "Get user statistics for the admin's college (total users, students, counsellors). Cookie-based auth."
+      },
+      "response": []
+    },
+    {
       "name": "List Users (Paginated)",
       "request": {
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "{{base_url}}/api/admin/users?page=1&limit=20",
+          "raw": "{{base_url}}/api/admin/users?page=1&limit=20&role=all&search=",
           "host": ["{{base_url}}"],
           "path": ["api", "admin", "users"],
           "query": [
-            { "key": "page", "value": "1" },
-            { "key": "limit", "value": "20" }
+            { "key": "page", "value": "1", "description": "Page number" },
+            { "key": "limit", "value": "20", "description": "Items per page" },
+            { "key": "role", "value": "all", "description": "Filter by role: student, counsellor, or all" },
+            { "key": "search", "value": "", "description": "Search by name or email" }
           ]
         },
-        "description": "Get paginated users for the admin's college. Cookie-based auth."
+        "description": "Get paginated users for the admin's college. Includes roll_no for students. Cookie-based auth."
       },
       "response": []
     },
