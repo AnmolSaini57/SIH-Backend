@@ -11,7 +11,7 @@ class ResourcesService {
       const fileName = `${timestamp}_${file.originalname}`;
       const filePath = `${counsellorId}/${fileName}`;
 
-      // Uploadingg file to Supabase Storage
+      // Upload file to Supabase Storage
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('counsellor-resources')
         .upload(filePath, file.buffer, {
@@ -21,8 +21,16 @@ class ResourcesService {
         });
 
       if (uploadError) {
+        console.error('Storage upload error:', uploadError);
         throw new Error(`File upload failed: ${uploadError.message}`);
       }
+
+      // Get public URL for the file
+      const { data: publicUrlData } = supabase.storage
+        .from('counsellor-resources')
+        .getPublicUrl(filePath);
+
+      const fileUrl = publicUrlData?.publicUrl || null;
 
       // Insert metadata into database
       const { data: resource, error: dbError } = await supabase
@@ -33,6 +41,7 @@ class ResourcesService {
             college_id: collegeId,
             resource_name: resourceData.resource_name,
             description: resourceData.description || null,
+            file_url: fileUrl,
             file_path: filePath,
             file_type: fileExtension.substring(1).toLowerCase(),
             file_size: file.size,
@@ -43,6 +52,7 @@ class ResourcesService {
         .single();
 
       if (dbError) {
+        console.error('Database insert error:', dbError);
         // If DB insert fails, delete the uploaded file
         await supabase.storage
           .from('counsellor-resources')
@@ -52,6 +62,7 @@ class ResourcesService {
 
       return resource;
     } catch (error) {
+      console.error('Upload resource error:', error);
       throw error;
     }
   }
@@ -189,16 +200,29 @@ class ResourcesService {
 
   async getDownloadUrl(filePath, expiresIn = 3600) {
     try {
+      // Try to create signed URL first
       const { data, error } = await supabase.storage
         .from('counsellor-resources')
         .createSignedUrl(filePath, expiresIn);
 
       if (error) {
+        console.error('Signed URL error:', error);
+        // Fallback to public URL if signed URL fails
+        const { data: publicUrlData } = supabase.storage
+          .from('counsellor-resources')
+          .getPublicUrl(filePath);
+        
+        if (publicUrlData?.publicUrl) {
+          console.log('Using public URL as fallback');
+          return publicUrlData.publicUrl;
+        }
+        
         throw new Error(`Failed to generate download URL: ${error.message}`);
       }
 
       return data.signedUrl;
     } catch (error) {
+      console.error('Get download URL error:', error);
       throw error;
     }
   }

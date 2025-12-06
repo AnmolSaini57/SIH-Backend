@@ -208,20 +208,22 @@ export const getDownloadUrl = async (req, res) => {
       return errorResponse(res, 'Unauthorized access to this resource', 403);
     }
 
-    // Generate signed URL
+    // Generate download URL (signed or public)
     const downloadUrl = await resourcesService.getDownloadUrl(resource.file_path);
 
     return successResponse(res, { 
-      download_url: downloadUrl,
+      downloadUrl: downloadUrl,  // Use camelCase to match frontend
+      download_url: downloadUrl, // Also keep snake_case for backward compatibility
       resource_name: resource.resource_name,
-      original_filename: resource.original_filename
+      original_filename: resource.original_filename,
+      file_type: resource.file_type
     }, 'Download URL generated successfully');
   } catch (error) {
     console.error('Get download URL error:', error);
     if (error.message === 'Resource not found') {
       return notFoundResponse(res, 'Resource');
     }
-    return errorResponse(res, error.message || 'Failed to generate download URL', 500);
+    return errorResponse(res, error.message || 'Failed to generate download URL. Make sure the storage bucket exists in Supabase.', 500);
   }
 };
 
