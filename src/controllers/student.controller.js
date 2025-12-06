@@ -580,3 +580,97 @@ export const getCollegeCounsellorsForMessaging = async (req, res) => {
     return errorResponse(res, 'Failed to get counsellors', 500);
   }
 };
+
+//////////////////////// REALTIME VOICE SESSION /////////////////////////////
+
+/**
+ * Create OpenAI Realtime Voice Session
+ * POST /api/student/realtime-session
+ * Returns ephemeral session token for WebRTC connection
+ */
+export const createRealtimeSession = async (req, res) => {
+  try {
+    const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+
+    // Validate API key is configured
+    if (!OPENAI_API_KEY) {
+      console.error('OpenAI API key not configured in environment variables');
+      return errorResponse(
+        res, 
+        'Voice assistant feature is not configured. Please contact administrator.', 
+        503
+      );
+    }
+
+    // Request ephemeral token from OpenAI
+    const response = await fetch('https://api.openai.com/v1/realtime/sessions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-realtime-preview-2024-12-17',
+        voice: 'alloy'
+      }),
+    });
+
+    // Handle OpenAI API errors
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('OpenAI Realtime API error:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorData
+      });
+
+      return errorResponse(
+        res, 
+        'Failed to create voice session. Please try again later.', 
+        502
+      );
+    }
+
+    const data = await response.json();
+
+    // Validate response structure
+    if (!data.client_secret || !data.client_secret.value) {
+      console.error('Invalid response from OpenAI Realtime API:', data);
+      return errorResponse(
+        res, 
+        'Invalid session response. Please try again.', 
+        500
+      );
+    }
+
+    // Log session creation (without exposing token)
+    console.log(`Realtime voice session created for user: ${req.user.user_id}`);
+
+    return successResponse(
+      res, 
+      { 
+        client_secret: data.client_secret.value,
+        expires_at: data.client_secret.expires_at || null
+      }, 
+      'Voice session created successfully'
+    );
+
+  } catch (error) {
+    console.error('Create realtime session error:', error);
+    
+    // Handle network errors
+    if (error.code === 'ENOTFOUND' || error.code === 'ETIMEDOUT') {
+      return errorResponse(
+        res, 
+        'Unable to reach voice service. Please check your connection.', 
+        503
+      );
+    }
+
+    return errorResponse(
+      res, 
+      'Failed to create voice session. Please try again.', 
+      500
+    );
+  }
+};

@@ -8,7 +8,8 @@ import {
   getCollegeCounsellorsWithAvailability,
   getMyAppointments,
   getSessionsSummary,
-  getCollegeCounsellorsForMessaging
+  getCollegeCounsellorsForMessaging,
+  createRealtimeSession
 } from '../controllers/student.controller.js';
 import {
   submitAssessmentController,
@@ -158,6 +159,15 @@ router.post('/assessments', submitAssessmentController);
 
 // Mount journaling routes
 router.use('/journal', journalingRoutes);
+
+//////////////////////// REALTIME VOICE SESSION /////////////////////////////
+
+/**
+ * Create OpenAI Realtime Voice Session
+ * POST /api/student/realtime-session
+ * Returns ephemeral token for WebRTC voice connection
+ */
+router.post('/realtime-session', createRealtimeSession);
 
 export default router;
 

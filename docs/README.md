@@ -101,6 +101,18 @@ This folder contains comprehensive documentation for all 9 API collections in th
 - Password management
 - College-level isolation
 
+### 10. [Realtime Voice Assistant API](./REALTIME_VOICE_API_DOCUMENTATION.md) 🆕
+**Endpoints**: Create Voice Session  
+**Roles**: Student  
+**Features**:
+- OpenAI Realtime WebRTC voice conversations
+- Natural voice-to-voice AI interactions
+- Secure ephemeral token generation
+- Real-time transcription & audio streaming
+- Low-latency responses (~300ms)
+
+**Quick Start**: See [Setup Guide](./REALTIME_VOICE_SETUP.md)
+
 ---
 
 ## 🗂️ Additional Documentation
@@ -114,10 +126,17 @@ This folder contains comprehensive documentation for all 9 API collections in th
 ## 🧪 Testing Resources
 
 ### Postman Collections
-All 9 API collections are available in the `postman/` folder:
+All 10 API collections are available in the `postman/` folder:
 1. `Auth_API.postman_collection.json`
 2. `Profile_Management_API.postman_collection.json`
 3. `Appointment_Management_API.postman_collection.json`
+4. `Assessment_API.postman_collection.json`
+5. `Journaling_API.postman_collection.json`
+6. `Messaging_API.postman_collection.json`
+7. `Community_API.postman_collection.json`
+8. `Resource_Management_API.postman_collection.json`
+9. `Admin_User_Management_API.postman_collection.json`
+10. `Realtime_Voice_API.postman_collection.json` 🆕
 4. `Assessment_API.postman_collection.json`
 5. `Journaling_API.postman_collection.json`
 6. `Messaging_API.postman_collection.json`
