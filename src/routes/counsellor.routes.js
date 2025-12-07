@@ -9,7 +9,8 @@ import {
   addAvailability,
   getSessions,
   getSessionsSummary,
-  updateSessionNotesAndGoals
+  updateSessionNotesAndGoals,
+  createRealtimeSession
 } from '../controllers/counsellor.controller.js';
 import {
   uploadResource,
@@ -179,5 +180,8 @@ router.get('/communities/:communityId/messages',
   validateUUID('communityId'), 
   communityController.getCounsellorCommunityMessages
 );
+
+// Voice Chat Realtime Session
+router.post('/realtime-session', createRealtimeSession);
 
 export default router;

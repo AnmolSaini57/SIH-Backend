@@ -14,7 +14,8 @@ import {
   deleteAnnouncement,
   generateReport,
   getAdminProfile,
-  updateAdminProfile
+  updateAdminProfile,
+  createRealtimeSession
 } from '../controllers/admin.controller.js';
 import { 
   validate, 
@@ -147,5 +148,8 @@ router.get('/communities/:communityId/messages',
 router.get('/reports', 
   generateReport
 );
+
+// Voice Chat Realtime Session
+router.post('/realtime-session', createRealtimeSession);
 
 export default router;
