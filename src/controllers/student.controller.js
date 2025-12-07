@@ -86,7 +86,12 @@ export const updateProfile = async (req, res) => {
  */
 export const bookAppointment = async (req, res) => {
   try {
-    const { counsellor_id, date, start_time, notes } = req.body;
+    const { counsellor_id, date, notes } = req.body;
+    const startTime = req.body.start_time || req.body.time;
+
+    if (!startTime) {
+      return errorResponse(res, 'start_time (or time) is required', 400);
+    }
 
     // Verify counsellor exists and belongs to same college
     const { data: counsellor, error: counsellorError } = await supabase
@@ -107,7 +112,7 @@ export const bookAppointment = async (req, res) => {
       .select('id')
       .eq('counsellor_id', counsellor_id)
       .eq('date', date)
-      .eq('start_time', start_time)
+      .eq('start_time', startTime)
       .in('status', ['pending', 'confirmed'])
       .single();
 
@@ -115,7 +120,7 @@ export const bookAppointment = async (req, res) => {
       return errorResponse(res, 'Time slot not available', 409);
     }
 
-    // Create appointment
+    // Create appointment (avoid relational select to handle missing FK relationships)
     const { data, error } = await supabase
       .from('appointments')
       .insert({
@@ -123,23 +128,12 @@ export const bookAppointment = async (req, res) => {
         counsellor_id,
         college_id: req.tenant,
         date,
-        start_time,
+        start_time: startTime,
         notes,
         status: 'pending',
         created_at: new Date().toISOString()
       })
-      .select(`
-        id,
-        date,
-        start_time,
-        status,
-        notes,
-        created_at,
-        counsellor:counsellor_id (
-          name,
-          email
-        )
-      `)
+      .select('id, date, start_time, status, notes, created_at, counsellor_id')
       .single();
 
     if (error) {
@@ -147,7 +141,16 @@ export const bookAppointment = async (req, res) => {
       return errorResponse(res, formattedError.message, 400);
     }
 
-    return successResponse(res, data, 'Appointment booked successfully', 201);
+    const responsePayload = {
+      ...data,
+      counsellor: {
+        id: counsellor.id,
+        name: counsellor.name,
+        email: counsellor.email
+      }
+    };
+
+    return successResponse(res, responsePayload, 'Appointment booked successfully', 201);
   } catch (error) {
     console.error('Book appointment error:', error);
     return errorResponse(res, 'Failed to book appointment', 500);
@@ -275,20 +278,12 @@ export const getMyAppointments = async (req, res) => {
       .select(`
         id,
         student_id,
+        counsellor_id,
         date,
         start_time,
-        time,
         status,
         notes,
-        student_intent,
-        counsellor:counsellor_id (
-          id,
-          name,
-          email,
-          counsellors (
-            specialization
-          )
-        )
+        student_intent
       `)
       .eq('student_id', req.user.user_id)
       .eq('college_id', req.tenant);
@@ -306,20 +301,62 @@ export const getMyAppointments = async (req, res) => {
       return errorResponse(res, formattedError.message, 400);
     }
 
-    const mapped = (data || []).map(appt => ({
-      id: appt.id,
-      student_id: appt.student_id,
-      date: appt.date,
-      time: appt.start_time || appt.time, // support both column names
-      status: appt.status,
-      counsellor: {
-        id: appt.counsellor?.id,
-        name: appt.counsellor?.name,
-        email: appt.counsellor?.email,
-        specialization: appt.counsellor?.counsellors?.specialization || null
-      },
-      purpose: appt.student_intent || appt.notes || null
-    }));
+    const appointments = data || [];
+    const counsellorIds = [...new Set(appointments.map(a => a.counsellor_id).filter(Boolean))];
+
+    const counsellorMap = {};
+    const specializationMap = {};
+
+    if (counsellorIds.length > 0) {
+      const { data: counsellorProfiles, error: counsellorProfilesError } = await supabase
+        .from('profiles')
+        .select('id, name, email')
+        .eq('college_id', req.tenant)
+        .in('id', counsellorIds);
+
+      if (counsellorProfilesError) {
+        const formattedError = formatSupabaseError(counsellorProfilesError);
+        return errorResponse(res, formattedError.message, 400);
+      }
+
+      (counsellorProfiles || []).forEach(c => {
+        counsellorMap[c.id] = c;
+      });
+
+      const { data: counsellorDetails, error: counsellorDetailsError } = await supabase
+        .from('counsellors')
+        .select('id, specialization')
+        .in('id', counsellorIds);
+
+      if (counsellorDetailsError) {
+        const formattedError = formatSupabaseError(counsellorDetailsError);
+        return errorResponse(res, formattedError.message, 400);
+      }
+
+      (counsellorDetails || []).forEach(detail => {
+        specializationMap[detail.id] = detail.specialization;
+      });
+    }
+
+    const mapped = appointments.map(appt => {
+      const counsellor = counsellorMap[appt.counsellor_id];
+      return {
+        id: appt.id,
+        student_id: appt.student_id,
+        date: appt.date,
+        time: appt.start_time,
+        status: appt.status,
+        counsellor: counsellor
+          ? {
+              id: counsellor.id,
+              name: counsellor.name,
+              email: counsellor.email,
+              specialization: specializationMap[counsellor.id] || null
+            }
+          : null,
+        purpose: appt.student_intent || appt.notes || null
+      };
+    });
 
     return successResponse(res, mapped, 'Student appointments retrieved successfully');
   } catch (error) {
@@ -337,22 +374,7 @@ export const getSessionsSummary = async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('appointments')
-      .select(`
-        id,
-        date,
-        start_time,
-        time,
-        notes,
-        session_goals,
-        counsellor:counsellor_id (
-          id,
-          name,
-          email,
-          counsellors (
-            specialization
-          )
-        )
-      `)
+      .select('id, counsellor_id, date, start_time, notes, session_goals')
       .eq('student_id', req.user.user_id)
       .eq('college_id', req.tenant)
       .eq('status', 'completed')
@@ -364,19 +386,61 @@ export const getSessionsSummary = async (req, res) => {
       return errorResponse(res, formattedError.message, 400);
     }
 
-    const sessions = (data || []).map(session => ({
-      id: session.id,
-      date: session.date,
-      time: session.start_time || session.time,
-      counsellor: {
-        id: session.counsellor?.id,
-        name: session.counsellor?.name,
-        email: session.counsellor?.email,
-        specialization: session.counsellor?.counsellors?.specialization || null
-      },
-      session_notes: session.notes || null,
-      session_goals: session.session_goals || []
-    }));
+    const completed = data || [];
+    const counsellorIds = [...new Set(completed.map(s => s.counsellor_id).filter(Boolean))];
+
+    const counsellorMap = {};
+    const specializationMap = {};
+
+    if (counsellorIds.length > 0) {
+      const { data: counsellorProfiles, error: counsellorProfilesError } = await supabase
+        .from('profiles')
+        .select('id, name, email')
+        .eq('college_id', req.tenant)
+        .in('id', counsellorIds);
+
+      if (counsellorProfilesError) {
+        const formattedError = formatSupabaseError(counsellorProfilesError);
+        return errorResponse(res, formattedError.message, 400);
+      }
+
+      (counsellorProfiles || []).forEach(c => {
+        counsellorMap[c.id] = c;
+      });
+
+      const { data: counsellorDetails, error: counsellorDetailsError } = await supabase
+        .from('counsellors')
+        .select('id, specialization')
+        .in('id', counsellorIds);
+
+      if (counsellorDetailsError) {
+        const formattedError = formatSupabaseError(counsellorDetailsError);
+        return errorResponse(res, formattedError.message, 400);
+      }
+
+      (counsellorDetails || []).forEach(detail => {
+        specializationMap[detail.id] = detail.specialization;
+      });
+    }
+
+    const sessions = completed.map(session => {
+      const counsellor = counsellorMap[session.counsellor_id];
+      return {
+        id: session.id,
+        date: session.date,
+        time: session.start_time,
+        counsellor: counsellor
+          ? {
+              id: counsellor.id,
+              name: counsellor.name,
+              email: counsellor.email,
+              specialization: specializationMap[counsellor.id] || null
+            }
+          : null,
+        session_notes: session.notes || null,
+        session_goals: session.session_goals || []
+      };
+    });
 
     return successResponse(res, sessions, 'Sessions summary retrieved successfully');
   } catch (error) {

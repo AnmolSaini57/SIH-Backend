@@ -174,19 +174,7 @@ export const getAppointmentRequests = async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('appointments')
-      .select(`
-        id,
-        date,
-        start_time,
-        student_intent,
-        created_at,
-        student:student_id (
-          id,
-          name,
-          email,
-          avatar_url
-        )
-      `)
+      .select('id, date, start_time, student_intent, created_at, student_id')
       .eq('counsellor_id', req.user.user_id)
       .eq('college_id', req.tenant)
       .eq('status', 'pending')
@@ -198,16 +186,32 @@ export const getAppointmentRequests = async (req, res) => {
       return errorResponse(res, formattedError.message, 400);
     }
 
-    const requests = (data || []).map(appt => ({
+    const appointments = data || [];
+    const studentIds = [...new Set(appointments.map(a => a.student_id).filter(Boolean))];
+
+    const studentMap = {};
+    if (studentIds.length > 0) {
+      const { data: students, error: studentsError } = await supabase
+        .from('profiles')
+        .select('id, name, email, avatar_url')
+        .eq('college_id', req.tenant)
+        .in('id', studentIds);
+
+      if (studentsError) {
+        const formattedError = formatSupabaseError(studentsError);
+        return errorResponse(res, formattedError.message, 400);
+      }
+
+      (students || []).forEach(s => {
+        studentMap[s.id] = s;
+      });
+    }
+
+    const requests = appointments.map(appt => ({
       id: appt.id,
       date: appt.date,
-      time: appt.start_time || appt.time,
-      student: {
-        id: appt.student?.id,
-        name: appt.student?.name,
-        email: appt.student?.email,
-        avatar_url: appt.student?.avatar_url
-      },
+      time: appt.start_time,
+      student: studentMap[appt.student_id] || null,
       student_intent: appt.student_intent || appt.notes || null,
       created_at: appt.created_at
     }));
@@ -373,20 +377,7 @@ export const getSessions = async (req, res) => {
 
     let query = supabase
       .from('appointments')
-      .select(`
-        id,
-        date,
-        start_time,
-        status,
-        notes,
-        student_intent,
-        student:student_id (
-          id,
-          name,
-          email,
-          avatar_url
-        )
-      `)
+      .select('id, date, start_time, status, notes, student_intent, student_id')
       .eq('counsellor_id', req.user.user_id)
       .eq('college_id', req.tenant);
 
@@ -403,17 +394,33 @@ export const getSessions = async (req, res) => {
       return errorResponse(res, formattedError.message, 400);
     }
 
-    const sessions = (data || []).map(session => ({
+    const appointments = data || [];
+    const studentIds = [...new Set(appointments.map(a => a.student_id).filter(Boolean))];
+
+    const studentMap = {};
+    if (studentIds.length > 0) {
+      const { data: students, error: studentsError } = await supabase
+        .from('profiles')
+        .select('id, name, email, avatar_url')
+        .eq('college_id', req.tenant)
+        .in('id', studentIds);
+
+      if (studentsError) {
+        const formattedError = formatSupabaseError(studentsError);
+        return errorResponse(res, formattedError.message, 400);
+      }
+
+      (students || []).forEach(s => {
+        studentMap[s.id] = s;
+      });
+    }
+
+    const sessions = appointments.map(session => ({
       id: session.id,
       date: session.date,
-      start_time: session.start_time || session.time,
+      start_time: session.start_time,
       status: session.status,
-      student: {
-        id: session.student?.id,
-        name: session.student?.name,
-        email: session.student?.email,
-        avatar_url: session.student?.avatar_url
-      },
+      student: studentMap[session.student_id] || null,
       purpose: session.student_intent || session.notes || null
     }));
 
@@ -433,19 +440,7 @@ export const getSessionsSummary = async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('appointments')
-      .select(`
-        id,
-        date,
-        start_time,
-        notes,
-        session_goals,
-        student:student_id (
-          id,
-          name,
-          email,
-          avatar_url
-        )
-      `)
+      .select('id, date, start_time, notes, session_goals, student_id')
       .eq('counsellor_id', req.user.user_id)
       .eq('college_id', req.tenant)
       .eq('status', 'completed')
@@ -457,16 +452,32 @@ export const getSessionsSummary = async (req, res) => {
       return errorResponse(res, formattedError.message, 400);
     }
 
-    const summary = (data || []).map(session => ({
+    const completed = data || [];
+    const studentIds = [...new Set(completed.map(s => s.student_id).filter(Boolean))];
+
+    const studentMap = {};
+    if (studentIds.length > 0) {
+      const { data: students, error: studentsError } = await supabase
+        .from('profiles')
+        .select('id, name, email, avatar_url')
+        .eq('college_id', req.tenant)
+        .in('id', studentIds);
+
+      if (studentsError) {
+        const formattedError = formatSupabaseError(studentsError);
+        return errorResponse(res, formattedError.message, 400);
+      }
+
+      (students || []).forEach(s => {
+        studentMap[s.id] = s;
+      });
+    }
+
+    const summary = completed.map(session => ({
       id: session.id,
       date: session.date,
-      time: session.start_time || session.time,
-      student: {
-        id: session.student?.id,
-        name: session.student?.name,
-        email: session.student?.email,
-        avatar_url: session.student?.avatar_url
-      },
+      time: session.start_time,
+      student: studentMap[session.student_id] || null,
       session_notes: session.notes || null,
       session_goals: session.session_goals || []
     }));
