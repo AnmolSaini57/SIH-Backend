@@ -1,4 +1,4 @@
-import { supabase } from '../config/supabase.js';
+import { supabase, supabaseAdmin } from '../config/supabase.js';
 import path from 'path';
 
 class ResourcesService {
@@ -21,8 +21,8 @@ class ResourcesService {
 
       console.log('[ResourcesService] Uploading to storage:', filePath);
 
-      // Upload file to Supabase Storage with service role authentication
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      // Upload file to Supabase Storage using admin client
+      const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
         .from('counsellor-resources')
         .upload(filePath, file.buffer, {
           contentType: file.mimetype,
@@ -42,14 +42,14 @@ class ResourcesService {
       console.log('[ResourcesService] Storage upload successful:', uploadData);
 
       // Get public URL for the file
-      const { data: publicUrlData } = supabase.storage
+      const { data: publicUrlData } = supabaseAdmin.storage
         .from('counsellor-resources')
         .getPublicUrl(filePath);
 
       const fileUrl = publicUrlData?.publicUrl || null;
       console.log('[ResourcesService] Public URL generated:', fileUrl);
 
-      // Insert metadata into database
+      // Insert metadata into database using admin client to bypass RLS
       const insertData = {
         counsellor_id: counsellorId,
         college_id: collegeId,
@@ -64,7 +64,7 @@ class ResourcesService {
 
       console.log('[ResourcesService] Inserting to database:', insertData);
 
-      const { data: resource, error: dbError } = await supabase
+      const { data: resource, error: dbError } = await supabaseAdmin
         .from('counsellor_resources')
         .insert([insertData])
         .select()
@@ -74,7 +74,7 @@ class ResourcesService {
         console.error('[ResourcesService] Database insert error:', dbError);
         console.error('[ResourcesService] DB error details:', JSON.stringify(dbError, null, 2));
         // If DB insert fails, delete the uploaded file
-        await supabase.storage
+        await supabaseAdmin.storage
           .from('counsellor-resources')
           .remove([filePath]);
         throw new Error(`Database insert failed: ${dbError.message}`);
