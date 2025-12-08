@@ -1,12 +1,13 @@
+import dotenv from "dotenv";
+
+// Load environment variables FIRST
+dotenv.config();
+
 import { createServer } from 'http';
 import app from "./app.js";
-import dotenv from "dotenv";
 import { initializeSocketIO } from './config/socket.js';
 import { initializeSocketHandlers } from './sockets/messaging.socket.js';
 import { initializeCommunitySocket } from './sockets/community.socket.js';
-
-// Load environment variables
-dotenv.config();
 
 const PORT = process.env.PORT || 5000;
 
