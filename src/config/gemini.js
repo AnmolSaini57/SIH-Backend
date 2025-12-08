@@ -1,16 +1,17 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import OpenAI from 'openai';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 
-if (!GEMINI_API_KEY) {
-  console.error('Missing Gemini API Key. Please add GEMINI_API_KEY to your .env file.');
+if (!OPENAI_API_KEY) {
+  console.error('Missing OpenAI API Key. Please add OPENAI_API_KEY to your .env file.');
 }
 
-// Initialize the Gemini API
-const genAI = GEMINI_API_KEY ? new GoogleGenerativeAI(GEMINI_API_KEY) : null;
+// Initialize the OpenAI API
+const openai = OPENAI_API_KEY ? new OpenAI({ apiKey: OPENAI_API_KEY }) : null;
 
 /**
  * Get AI-powered guidance and recommendations for mental health assessments
@@ -22,14 +23,11 @@ const genAI = GEMINI_API_KEY ? new GoogleGenerativeAI(GEMINI_API_KEY) : null;
  * @returns {Promise<Object>} - AI-generated guidance and recommendations
  */
 export const getAssessmentGuidance = async ({ formType, responses, score, severityLevel }) => {
-  if (!genAI) {
-    throw new Error('Gemini API is not configured');
+  if (!openai) {
+    throw new Error('OpenAI API is not configured');
   }
 
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-
-
     const prompt = `You are a supportive mental health assistant for a college student wellbeing platform.
 Your job is to provide compassionate, brief, and practical guidance based on a mental health assessment.
 
@@ -70,10 +68,19 @@ OUTPUT FORMAT (STRICT JSON):
 }
 Return ONLY valid JSON. Do not include markdown or explanations.`;
 
-    const generationConfig = { maxOutputTokens: 256, temperature: 0.6 }; // cap length for speed and brevity
-    const result = await model.generateContent({ contents: [{ role: 'user', parts: [{ text: prompt }]}], generationConfig });
-    const response = await result.response;
-    const text = response.text();
+    const result = await openai.chat.completions.create({
+      model: OPENAI_MODEL,
+      messages: [
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      temperature: 0.6,
+      max_tokens: 256
+    });
+
+    const text = result.choices[0].message.content;
 
     // Parse the JSON response
     // Remove markdown code blocks if present
@@ -95,7 +102,7 @@ Return ONLY valid JSON. Do not include markdown or explanations.`;
       recommendedActions: trimmedActions
     };
   } catch (error) {
-    console.error('Gemini API Error:', error);
+    console.error('OpenAI API Error:', error);
     // Return fallback guidance if API fails
     return getFallbackGuidance(formType, severityLevel);
   }

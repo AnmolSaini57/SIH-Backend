@@ -93,19 +93,19 @@ const scorePSS10 = (responses) => {
 /**
  * WHO-5 (WHO Well-Being Index) - Well-being Assessment
  * Scoring: Each question scored 0-5
- * Raw Score: 0-25, then multiply by 4 for percentage (0-100)
- * Interpretation: 0-28 (Poor), 29-50 (Low), 51-100 (Good)
+ * Raw Score: 0-25 (sum of all 5 questions)
+ * Interpretation: 0-7 (Poor), 8-14 (Low), 15-19 (Fair), 20-25 (Good)
  */
 const scoreWHO5 = (responses) => {
   const rawScore = Object.values(responses).reduce((sum, val) => sum + parseInt(val), 0);
-  const score = rawScore * 4; // Convert to percentage
   let severity;
   
-  if (score <= 28) severity = 'Severe'; // Poor wellbeing
-  else if (score <= 50) severity = 'Moderate'; // Low wellbeing
+  if (rawScore <= 7) severity = 'Severe'; // Poor wellbeing
+  else if (rawScore <= 14) severity = 'Moderate'; // Low wellbeing
+  else if (rawScore <= 19) severity = 'Mild'; // Fair wellbeing
   else severity = 'Minimal'; // Good wellbeing
   
-  return { score, severity };
+  return { score: rawScore, severity };
 };
 
 /**

@@ -1,12 +1,13 @@
 import { JournalingService } from '../services/journaling.service.js';
 import { successResponse, errorResponse } from '../utils/response.js';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import OpenAI from 'openai';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const genAI = GEMINI_API_KEY ? new GoogleGenerativeAI(GEMINI_API_KEY) : null;
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+const openai = OPENAI_API_KEY ? new OpenAI({ apiKey: OPENAI_API_KEY }) : null;
 
 // ==================== INTERNAL HELPERS ====================
 // Lightweight classification retained ONLY for analytics / storing a label.
@@ -291,12 +292,11 @@ export const generatePositiveReframePreview = async (req, res) => {
       return errorResponse(res, 'whats_on_mind text is required', 400);
     }
 
-    if (!genAI) {
+    if (!openai) {
       return errorResponse(res, 'AI reframing service is not available', 503);
     }
 
     const lang = classifyLanguage(whats_on_mind);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
     const prompt = `You are a compassionate mental health assistant for college students.
 The student has shared a worry. Reframe it with balance, validation, and gentle encouragement.
@@ -318,13 +318,19 @@ GUIDELINES:
 
 OUTPUT: Only the supportive reframe.`;
 
-    const generationConfig = { maxOutputTokens: 150, temperature: 0.7 };
-    const result = await model.generateContent({
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      generationConfig
+    const result = await openai.chat.completions.create({
+      model: OPENAI_MODEL,
+      messages: [
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      temperature: 0.7,
+      max_tokens: 150
     });
-    const response = await result.response;
-    const positiveReframe = response.text().trim();
+
+    const positiveReframe = result.choices[0].message.content.trim();
 
     // If save requested, either update existing by id or create new by date
     if (save) {
