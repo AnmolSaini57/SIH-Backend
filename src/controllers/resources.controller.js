@@ -5,6 +5,7 @@ import {
   notFoundResponse,
   formatSupabaseError 
 } from '../utils/response.js';
+import { supabase } from '../config/supabase.js';
 import multer from 'multer';
 import path from 'path';
 
@@ -43,19 +44,31 @@ const uploadMiddleware = upload.single('file');
 export const uploadResource = async (req, res) => {
   uploadMiddleware(req, res, async (err) => {
     try {
+      console.log('[Resources Controller] Upload request received');
+      console.log('[Resources Controller] User:', { id: req.user?.user_id, role: req.user?.role, college_id: req.user?.college_id });
+      
       // Handle multer errors
       if (err instanceof multer.MulterError) {
+        console.error('[Resources Controller] Multer error:', err);
         if (err.code === 'LIMIT_FILE_SIZE') {
           return errorResponse(res, 'File size exceeds the limit (50MB)', 400);
         }
         return errorResponse(res, `File upload error: ${err.message}`, 400);
       } else if (err) {
+        console.error('[Resources Controller] Upload middleware error:', err);
         return errorResponse(res, err.message, 400);
       }
 
       if (!req.file) {
+        console.error('[Resources Controller] No file uploaded');
         return errorResponse(res, 'No file uploaded. Please choose a file.', 400);
       }
+
+      console.log('[Resources Controller] File received:', {
+        name: req.file.originalname,
+        size: req.file.size,
+        mimetype: req.file.mimetype
+      });
 
       // Validate required fields
       const { resource_name, description } = req.body;
@@ -65,10 +78,28 @@ export const uploadResource = async (req, res) => {
       }
 
       // Get counsellor's college_id from profile
-      const collegeId = req.user.college_id || req.tenant;
+      let collegeId = req.user.college_id || req.tenant;
+      
+      // If still no college_id, fetch from profiles table
+      if (!collegeId) {
+        console.log('[Resources] Fetching college_id from profiles table for user:', req.user.user_id);
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('college_id')
+          .eq('id', req.user.user_id)
+          .single();
+        
+        if (profileError) {
+          console.error('[Resources] Error fetching profile:', profileError);
+        }
+        
+        collegeId = profile?.college_id || null;
+        console.log('[Resources] College ID from profile:', collegeId);
+      }
       
       if (!collegeId) {
-        return errorResponse(res, 'College ID not found for counsellor', 400);
+        console.error('[Resources] College ID not found for counsellor:', req.user.user_id);
+        return errorResponse(res, 'College ID not found. Please update your profile with college information.', 400);
       }
 
       // Prepare resource data
@@ -76,6 +107,14 @@ export const uploadResource = async (req, res) => {
         resource_name: resource_name.trim(),
         description: description ? description.trim() : null
       };
+
+      console.log('[Resources] Uploading resource:', {
+        counsellorId: req.user.user_id,
+        collegeId,
+        resourceName: resourceData.resource_name,
+        fileSize: req.file.size,
+        fileType: req.file.mimetype
+      });
 
       // Upload resource
       const resource = await resourcesService.uploadResource(
@@ -87,7 +126,8 @@ export const uploadResource = async (req, res) => {
 
       return successResponse(res, resource, 'Resource uploaded successfully', 201);
     } catch (error) {
-      console.error('Upload resource error:', error);
+      console.error('[Resources] Upload resource error:', error);
+      console.error('[Resources] Error stack:', error.stack);
       return errorResponse(res, error.message || 'Failed to upload resource', 500);
     }
   });

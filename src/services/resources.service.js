@@ -5,25 +5,41 @@ class ResourcesService {
 
   async uploadResource(resourceData, file, counsellorId, collegeId) {
     try {
+      console.log('[ResourcesService] Starting upload:', {
+        counsellorId,
+        collegeId,
+        fileName: file.originalname,
+        fileSize: file.size,
+        mimeType: file.mimetype
+      });
+
       // Generate unique file path
       const timestamp = Date.now();
       const fileExtension = path.extname(file.originalname);
       const fileName = `${timestamp}_${file.originalname}`;
       const filePath = `${counsellorId}/${fileName}`;
 
-      // Upload file to Supabase Storage
+      console.log('[ResourcesService] Uploading to storage:', filePath);
+
+      // Upload file to Supabase Storage with service role authentication
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('counsellor-resources')
         .upload(filePath, file.buffer, {
           contentType: file.mimetype,
           cacheControl: '3600',
-          upsert: false
+          upsert: false,
+          duplex: 'half'
         });
 
       if (uploadError) {
-        console.error('Storage upload error:', uploadError);
+        console.error('[ResourcesService] Storage upload error:', uploadError);
+        console.error('[ResourcesService] Upload error details:', JSON.stringify(uploadError, null, 2));
         throw new Error(`File upload failed: ${uploadError.message}`);
       }
+
+      console.log('[ResourcesService] Storage upload successful:', uploadData);
+
+      console.log('[ResourcesService] Storage upload successful:', uploadData);
 
       // Get public URL for the file
       const { data: publicUrlData } = supabase.storage
@@ -31,28 +47,32 @@ class ResourcesService {
         .getPublicUrl(filePath);
 
       const fileUrl = publicUrlData?.publicUrl || null;
+      console.log('[ResourcesService] Public URL generated:', fileUrl);
 
       // Insert metadata into database
+      const insertData = {
+        counsellor_id: counsellorId,
+        college_id: collegeId,
+        resource_name: resourceData.resource_name,
+        description: resourceData.description || null,
+        file_url: fileUrl,
+        file_path: filePath,
+        file_type: fileExtension.substring(1).toLowerCase(),
+        file_size: file.size,
+        original_filename: file.originalname
+      };
+
+      console.log('[ResourcesService] Inserting to database:', insertData);
+
       const { data: resource, error: dbError } = await supabase
         .from('counsellor_resources')
-        .insert([
-          {
-            counsellor_id: counsellorId,
-            college_id: collegeId,
-            resource_name: resourceData.resource_name,
-            description: resourceData.description || null,
-            file_url: fileUrl,
-            file_path: filePath,
-            file_type: fileExtension.substring(1).toLowerCase(),
-            file_size: file.size,
-            original_filename: file.originalname
-          }
-        ])
+        .insert([insertData])
         .select()
         .single();
 
       if (dbError) {
-        console.error('Database insert error:', dbError);
+        console.error('[ResourcesService] Database insert error:', dbError);
+        console.error('[ResourcesService] DB error details:', JSON.stringify(dbError, null, 2));
         // If DB insert fails, delete the uploaded file
         await supabase.storage
           .from('counsellor-resources')
@@ -60,9 +80,12 @@ class ResourcesService {
         throw new Error(`Database insert failed: ${dbError.message}`);
       }
 
+      console.log('[ResourcesService] Resource created successfully:', resource);
+      console.log('[ResourcesService] Resource created successfully:', resource);
       return resource;
     } catch (error) {
-      console.error('Upload resource error:', error);
+      console.error('[ResourcesService] Upload resource error:', error);
+      console.error('[ResourcesService] Error stack:', error.stack);
       throw error;
     }
   }
