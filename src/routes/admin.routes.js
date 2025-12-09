@@ -15,7 +15,8 @@ import {
   generateReport,
   getAdminProfile,
   updateAdminProfile,
-  createRealtimeSession
+  createRealtimeSession,
+  getAssessmentAnalytics
 } from '../controllers/admin.controller.js';
 import { 
   validate, 
@@ -33,6 +34,9 @@ const router = express.Router();
 
 // Dashboard
 router.get('/dashboard/stats', getDashboardStats);
+
+// Analytics
+router.get('/analytics/assessments', getAssessmentAnalytics);
 
 /////////////// PROFILE MANAGEMENT /////////////////////
 // Get admin profile

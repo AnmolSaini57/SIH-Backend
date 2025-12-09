@@ -35,6 +35,8 @@ import {
   getAnnouncementsForUser,
   markAnnouncementSeen
 } from '../controllers/announcement.controller.js';
+  getAssessmentAnalytics
+} from '../controllers/admin.controller.js';
 import { 
   validate, 
   validatePagination,
@@ -71,6 +73,9 @@ router.post('/announcements/:announcement_id/seen',
 
 // Dashboard
 router.get('/dashboard/stats', getDashboardStats);
+
+// Analytics
+router.get('/analytics/assessments', getAssessmentAnalytics);
 
 
 /////////////////// APPOINTMENT MANAGEMENT ///////////////////////////////
