@@ -158,9 +158,20 @@ export const adminSchemas = {
   createAnnouncement: Joi.object({
     title: Joi.string().min(3).max(200).required(),
     content: Joi.string().min(10).max(5000).required(),
-    type: Joi.string().valid('info', 'warning', 'urgent', 'event').default('info'),
-    target_role: Joi.string().valid('all', 'student', 'counsellor').default('all')
+    type: Joi.string().valid('info', 'warning', 'urgent', 'event', 'maintenance').default('info'),
+    target_role: Joi.string().valid('all', 'student', 'counsellor', 'admin').default('all'),
+    duration_days: Joi.number().integer().min(1).max(365).required()
   }),
+
+  updateAnnouncement: Joi.object({
+    title: Joi.string().min(3).max(200).optional(),
+    content: Joi.string().min(10).max(5000).optional(),
+    type: Joi.string().valid('info', 'warning', 'urgent', 'event', 'maintenance').optional(),
+    target_role: Joi.string().valid('all', 'student', 'counsellor', 'admin').optional(),
+    duration_days: Joi.number().integer().min(1).max(365).optional(),
+    is_active: Joi.boolean().optional(),
+    is_pinned: Joi.boolean().optional()
+  }).min(1),
   
   createStudent: Joi.object({
     name: Joi.string().min(2).max(100).required().messages({
@@ -215,6 +226,9 @@ export const paginationSchema = Joi.object({
  */
 export const validate = (schema, property = 'body') => {
   return (req, res, next) => {
+    console.log('Validating property:', property);
+    console.log('Request body:', req[property]);
+    
     const { error, value } = schema.validate(req[property], {
       abortEarly: false,
       allowUnknown: false,
@@ -222,6 +236,7 @@ export const validate = (schema, property = 'body') => {
     });
 
     if (error) {
+      console.log('Validation errors:', error.details);
       const errors = error.details.map(detail => ({
         field: detail.path.join('.'),
         message: detail.message,

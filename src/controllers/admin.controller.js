@@ -6,6 +6,11 @@ import {
   paginatedResponse,
   formatSupabaseError 
 } from "../utils/response.js";
+import {
+  calculateAnnouncementExpiry,
+  cleanupExpiredAnnouncements,
+  getAnnouncementViewStats
+} from "../services/announcement.service.js";
 
 /**
  * Admin Controller
@@ -75,7 +80,10 @@ export const getDashboardStats = async (req, res) => {
  */
 export const createAnnouncement = async (req, res) => {
   try {
-    const { title, content, type, target_role, expires_at } = req.body;
+    const { title, content, type, target_role, duration_days } = req.body;
+
+    const nowIso = new Date().toISOString();
+    const expiresAt = calculateAnnouncementExpiry(duration_days);
 
     const { data, error } = await supabase
       .from('announcements')
@@ -84,11 +92,13 @@ export const createAnnouncement = async (req, res) => {
         content,
         type: type || 'info',
         target_role: target_role || 'all',
+        duration_days,
         college_id: req.tenant,
         created_by: req.user.user_id,
-        expires_at,
+        expires_at: expiresAt,
         is_active: true,
-        created_at: new Date().toISOString()
+        created_at: nowIso,
+        updated_at: nowIso
       })
       .select(`
         id,
@@ -96,6 +106,7 @@ export const createAnnouncement = async (req, res) => {
         content,
         type,
         target_role,
+        duration_days,
         expires_at,
         is_active,
         created_at,
@@ -110,7 +121,9 @@ export const createAnnouncement = async (req, res) => {
       return errorResponse(res, formattedError.message, 400);
     }
 
-    return successResponse(res, data, 'Announcement created successfully', 201);
+    const payload = data ? { ...data, seen_count: 0 } : data;
+
+    return successResponse(res, payload, 'Announcement created successfully', 201);
   } catch (error) {
     console.error('Create announcement error:', error);
     return errorResponse(res, 'Failed to create announcement', 500);
@@ -123,7 +136,12 @@ export const createAnnouncement = async (req, res) => {
 export const getAnnouncements = async (req, res) => {
   try {
     const { page = 1, limit = 20, type, is_active } = req.query;
-    const offset = (page - 1) * limit;
+    const pageNumber = parseInt(page, 10) || 1;
+    const limitNumber = parseInt(limit, 10) || 20;
+    const offset = (pageNumber - 1) * limitNumber;
+
+    // Get current time for filtering expired announcements
+    const nowIso = new Date().toISOString();
 
     let query = supabase
       .from('announcements')
@@ -133,6 +151,7 @@ export const getAnnouncements = async (req, res) => {
         content,
         type,
         target_role,
+        duration_days,
         expires_at,
         is_active,
         created_at,
@@ -140,7 +159,8 @@ export const getAnnouncements = async (req, res) => {
           name
         )
       `, { count: 'exact' })
-      .eq('college_id', req.tenant);
+      .eq('college_id', req.tenant)
+      .gt('expires_at', nowIso);  // Only get announcements that haven't expired yet
 
     if (type) {
       query = query.eq('type', type);
@@ -152,14 +172,32 @@ export const getAnnouncements = async (req, res) => {
 
     const { data, error, count } = await query
       .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1);
+      .range(offset, offset + limitNumber - 1);
 
     if (error) {
       const formattedError = formatSupabaseError(error);
       return errorResponse(res, formattedError.message, 400);
     }
 
-    return paginatedResponse(res, data, page, limit, count);
+    let viewCounts = {};
+    if (data && data.length) {
+      try {
+        const { counts } = await getAnnouncementViewStats(
+          data.map((item) => item.id),
+          req.tenant
+        );
+        viewCounts = counts;
+      } catch (viewError) {
+        console.error('Get announcement view stats error:', viewError);
+      }
+    }
+
+    const formatted = (data || []).map((item) => ({
+      ...item,
+      seen_count: viewCounts[item.id] || 0
+    }));
+
+    return paginatedResponse(res, formatted, pageNumber, limitNumber, count);
   } catch (error) {
     console.error('Get announcements error:', error);
     return errorResponse(res, 'Failed to get announcements', 500);
@@ -172,7 +210,13 @@ export const getAnnouncements = async (req, res) => {
 export const updateAnnouncement = async (req, res) => {
   try {
     const { announcement_id } = req.params;
-    const updates = { ...req.body, updated_at: new Date().toISOString() };
+    await cleanupExpiredAnnouncements(req.tenant);
+    const nowIso = new Date().toISOString();
+    const updates = { ...req.body, updated_at: nowIso };
+
+    if (updates.duration_days) {
+      updates.expires_at = calculateAnnouncementExpiry(updates.duration_days);
+    }
 
     const { data, error } = await supabase
       .from('announcements')

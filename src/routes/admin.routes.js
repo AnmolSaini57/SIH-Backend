@@ -100,7 +100,7 @@ router.get('/announcements',
 
 router.put('/announcements/:announcement_id', 
   validateUUID('announcement_id'),
-  validate(adminSchemas.createAnnouncement), 
+  validate(adminSchemas.updateAnnouncement), 
   updateAnnouncement
 );
 
