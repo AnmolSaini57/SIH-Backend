@@ -7,6 +7,8 @@ import {
   acceptAppointmentRequest,
   declineAppointmentRequest,
   addAvailability,
+  getAvailability,
+  deleteAvailability,
   getSessions,
   getSessionsSummary,
   updateSessionNotesAndGoals,
@@ -74,9 +76,16 @@ router.put('/appointment-requests/:appointment_id/decline',
 );
 
 // Availability management
+router.get('/manage-availability', getAvailability);
+
 router.post('/manage-availability',
   validate(availabilitySchemas.addAvailability),
   addAvailability
+);
+
+router.delete('/manage-availability/:availability_id',
+  validateUUID('availability_id'),
+  deleteAvailability
 );
 
 // Sessions (all appointments for counsellor)

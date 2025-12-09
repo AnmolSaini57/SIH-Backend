@@ -15,23 +15,29 @@ export default function role(requiredRole) {
 
     const userRole = req.user.role;
     
+    console.log(`[Role Check] User: ${req.user.user_id}, Role: ${userRole}, Required: ${requiredRole}`);
+    
     // Handle multiple allowed roles
     if (Array.isArray(requiredRole)) {
       if (!requiredRole.includes(userRole)) {
+        console.log(`[Role Check FAILED] User role '${userRole}' not in required roles: [${requiredRole.join(', ')}]`);
         return errorResponse(res, `Access denied. Required role: ${requiredRole.join(' or ')}`, 403);
       }
     } else {
       // Handle single required role
       if (userRole !== requiredRole) {
+        console.log(`[Role Check FAILED] User role '${userRole}' doesn't match required '${requiredRole}'`);
         return errorResponse(res, `Access denied. Required role: ${requiredRole}`, 403);
       }
     }
 
     // SuperAdmin has access to everything
     if (userRole === 'superadmin') {
+      console.log(`[Role Check PASSED] SuperAdmin access`);
       return next();
     }
 
+    console.log(`[Role Check PASSED] User has required role`);
     return next();
   };
 }

@@ -35,6 +35,7 @@ import {
   appointmentSchemas
 } from '../utils/validators.js';
 import journalingRoutes from './journaling.routes.js';
+import memoryWallRoutes from './memoryWall.routes.js';
 
 const router = express.Router();
 
@@ -159,6 +160,11 @@ router.post('/assessments', submitAssessmentController);
 
 // Mount journaling routes
 router.use('/journal', journalingRoutes);
+
+//////////////////////// MEMORY WALL /////////////////////////////
+
+// Mount memory wall routes
+router.use('/memory-wall', memoryWallRoutes);
 
 //////////////////////// REALTIME VOICE SESSION /////////////////////////////
 
