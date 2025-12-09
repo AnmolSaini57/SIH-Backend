@@ -174,7 +174,7 @@ export const getAppointmentRequests = async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('appointments')
-      .select('id, date, start_time, student_intent, created_at, student_id')
+      .select('id, date, start_time, notes, student_intent, created_at, student_id, status')
       .eq('counsellor_id', req.user.user_id)
       .eq('college_id', req.tenant)
       .eq('status', 'pending')
@@ -211,8 +211,10 @@ export const getAppointmentRequests = async (req, res) => {
       id: appt.id,
       date: appt.date,
       time: appt.start_time,
+      status: appt.status,
       student: studentMap[appt.student_id] || null,
-      student_intent: appt.student_intent || appt.notes || null,
+      student_intent: appt.notes || appt.student_intent || null,
+      notes: appt.notes || appt.student_intent || null,
       created_at: appt.created_at
     }));
 
@@ -285,6 +287,19 @@ export const acceptAppointmentRequest = async (req, res) => {
         console.warn('Warning: Failed to delete availability slot:', deleteError);
         // Don't fail the appointment acceptance if slot deletion fails
         // The appointment is already confirmed, which is the critical action
+      }
+    }
+
+    // Fetch student info separately
+    if (data.student_id) {
+      const { data: student } = await supabase
+        .from('profiles')
+        .select('id, name, email')
+        .eq('id', data.student_id)
+        .single();
+      
+      if (student) {
+        data.student = student;
       }
     }
 
@@ -472,12 +487,15 @@ export const getSessions = async (req, res) => {
 
     let query = supabase
       .from('appointments')
-      .select('id, date, start_time, status, notes, student_intent, student_id')
+      .select('id, date, start_time, status, notes, student_id, created_at, updated_at')
       .eq('counsellor_id', req.user.user_id)
       .eq('college_id', req.tenant);
 
+    // Filter by status if provided, otherwise show confirmed and completed
     if (status) {
       query = query.eq('status', status);
+    } else {
+      query = query.in('status', ['confirmed', 'completed']);
     }
 
     const { data, error } = await query
@@ -514,9 +532,14 @@ export const getSessions = async (req, res) => {
       id: session.id,
       date: session.date,
       start_time: session.start_time,
+      time: session.start_time,
       status: session.status,
       student: studentMap[session.student_id] || null,
-      purpose: session.student_intent || session.notes || null
+      student_id: session.student_id,
+      notes: session.notes || null,
+      student_intent: session.notes || null,
+      created_at: session.created_at,
+      updated_at: session.updated_at
     }));
 
     return successResponse(res, sessions, 'Sessions retrieved successfully');

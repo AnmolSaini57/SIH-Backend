@@ -76,6 +76,8 @@ router.put('/appointment-requests/:appointment_id/decline',
 );
 
 // Availability management
+router.get('/manage-availability', getAvailability);
+
 router.post('/manage-availability',
   validate(availabilitySchemas.addAvailability),
   addAvailability

@@ -1,0 +1,241 @@
+{
+  "info": {
+    "name": "Memory Wall API",
+    "description": "API endpoints for Student Memory Wall feature - Create, read, update, and delete memories with photos",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "SIH-Backend"
+  },
+  "item": [
+    {
+      "name": "Get All Memories",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/student/memory-wall",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "student", "memory-wall"]
+        },
+        "description": "Retrieve all memories for the authenticated student. Supports optional filters:\n- search: Search by title or description\n- startDate: Filter from date (YYYY-MM-DD)\n- endDate: Filter to date (YYYY-MM-DD)"
+      },
+      "response": []
+    },
+    {
+      "name": "Get All Memories (with search)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/student/memory-wall?search=vacation",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "student", "memory-wall"],
+          "query": [
+            {
+              "key": "search",
+              "value": "vacation",
+              "description": "Search in title and description"
+            }
+          ]
+        },
+        "description": "Search memories by title or description"
+      },
+      "response": []
+    },
+    {
+      "name": "Get All Memories (with date range)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/student/memory-wall?startDate=2025-01-01&endDate=2025-12-31",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "student", "memory-wall"],
+          "query": [
+            {
+              "key": "startDate",
+              "value": "2025-01-01",
+              "description": "Start date (YYYY-MM-DD)"
+            },
+            {
+              "key": "endDate",
+              "value": "2025-12-31",
+              "description": "End date (YYYY-MM-DD)"
+            }
+          ]
+        },
+        "description": "Filter memories by date range"
+      },
+      "response": []
+    },
+    {
+      "name": "Create Memory",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "photo",
+              "type": "file",
+              "src": [],
+              "description": "Image file (max 10MB, JPG/PNG/GIF/WebP/HEIC)"
+            },
+            {
+              "key": "title",
+              "value": "Summer Vacation 2025",
+              "type": "text",
+              "description": "Memory title (max 200 characters)"
+            },
+            {
+              "key": "date",
+              "value": "2025-07-15",
+              "type": "text",
+              "description": "Memory date (YYYY-MM-DD, cannot be future)"
+            },
+            {
+              "key": "description",
+              "value": "Amazing trip to the mountains with friends. We hiked, camped, and had the best time!",
+              "type": "text",
+              "description": "Optional description"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/student/memory-wall",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "student", "memory-wall"]
+        },
+        "description": "Create a new memory with photo upload. Requires multipart/form-data with photo file."
+      },
+      "response": []
+    },
+    {
+      "name": "Get Memory By ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/student/memory-wall/{{memoryId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "student", "memory-wall", "{{memoryId}}"]
+        },
+        "description": "Retrieve a specific memory by its ID. Only accessible by the student who created it."
+      },
+      "response": []
+    },
+    {
+      "name": "Update Memory",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Updated Memory Title\",\n  \"date\": \"2025-07-16\",\n  \"description\": \"Updated description with more details\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/student/memory-wall/{{memoryId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "student", "memory-wall", "{{memoryId}}"]
+        },
+        "description": "Update memory details (title, date, description). Note: Photo cannot be updated - only metadata."
+      },
+      "response": []
+    },
+    {
+      "name": "Update Memory (Title Only)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"New Title\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/student/memory-wall/{{memoryId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "student", "memory-wall", "{{memoryId}}"]
+        },
+        "description": "Update only the title of a memory. Other fields remain unchanged."
+      },
+      "response": []
+    },
+    {
+      "name": "Delete Memory",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/student/memory-wall/{{memoryId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "student", "memory-wall", "{{memoryId}}"]
+        },
+        "description": "Delete a memory and its associated photo from storage. Only accessible by the student who created it."
+      },
+      "response": []
+    },
+    {
+      "name": "Get Memory Statistics",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/student/memory-wall/stats",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "student", "memory-wall", "stats"]
+        },
+        "description": "Get statistics about the student's memories: total count, recent count (last 30 days), oldest and newest memory dates."
+      },
+      "response": []
+    }
+  ],
+  "auth": {
+    "type": "noauth"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Authentication is handled via httpOnly cookies",
+          "// Make sure you've logged in first via /api/auth/login",
+          "// The cookie will be automatically sent with each request"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "memoryId",
+      "value": "",
+      "type": "string",
+      "description": "Replace with actual memory UUID after creating a memory"
+    }
+  ]
+}

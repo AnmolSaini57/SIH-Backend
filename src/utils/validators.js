@@ -117,7 +117,7 @@ export const appointmentSchemas = {
       'string.pattern.base': 'Time must be in HH:MM format'
     }),
     type: Joi.string().valid('individual', 'group', 'emergency').required(),
-    notes: Joi.string().max(500).optional()
+    notes: Joi.string().max(500).allow('', null).optional()
   }),
   
   updateAppointment: Joi.object({

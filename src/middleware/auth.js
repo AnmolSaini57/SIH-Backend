@@ -54,6 +54,8 @@ export default async function auth(req, res, next) {
         iat: decoded.iat
       };
       
+      console.log(`[Auth] User authenticated - ID: ${req.user.user_id}, Email: ${req.user.email}, Role: ${req.user.role}, College: ${req.user.college_id}`);
+      
       return next();
     } catch (tokenError) {
       // Access token is invalid or expired, try to refresh
