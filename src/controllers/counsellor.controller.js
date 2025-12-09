@@ -234,6 +234,29 @@ export const acceptAppointmentRequest = async (req, res) => {
   try {
     const { appointment_id } = req.params;
 
+    // First check if appointment exists and is pending
+    const { data: existing, error: checkError } = await supabase
+      .from('appointments')
+      .select('id, status, counsellor_id, college_id, date, start_time')
+      .eq('id', appointment_id)
+      .single();
+
+    if (checkError || !existing) {
+      return notFoundResponse(res, 'Appointment');
+    }
+
+    if (existing.status !== 'pending') {
+      return errorResponse(res, `Appointment is not pending (status: ${existing.status}). Cannot accept.`, 400);
+    }
+
+    if (existing.counsellor_id !== req.user.user_id) {
+      return errorResponse(res, 'You are not the counsellor for this appointment', 403);
+    }
+
+    if (existing.college_id !== req.tenant) {
+      return errorResponse(res, 'Appointment does not belong to your college', 403);
+    }
+
     const { data, error } = await supabase
       .from('appointments')
       .update({ 
@@ -241,10 +264,7 @@ export const acceptAppointmentRequest = async (req, res) => {
         updated_at: new Date().toISOString()
       })
       .eq('id', appointment_id)
-      .eq('counsellor_id', req.user.user_id)
-      .eq('college_id', req.tenant)
-      .eq('status', 'pending') // Only accept if currently pending
-      .select('id, date, start_time, status, student_id, notes')
+      .select('id, date, start_time, status, student_id')
       .single();
 
     if (error) {
@@ -252,8 +272,22 @@ export const acceptAppointmentRequest = async (req, res) => {
       return errorResponse(res, formattedError.message, 400);
     }
 
-    if (!data) {
-      return notFoundResponse(res, 'Appointment request');
+    // Delete the matching availability slot from counsellor_availability
+    // Match by date and start_time
+    if (existing.date && existing.start_time) {
+      const { error: deleteError } = await supabase
+        .from('counsellor_availability')
+        .delete()
+        .eq('counsellor_id', req.user.user_id)
+        .eq('college_id', req.tenant)
+        .eq('date', existing.date)
+        .eq('start_time', existing.start_time);
+
+      if (deleteError) {
+        console.warn('Warning: Failed to delete availability slot:', deleteError);
+        // Don't fail the appointment acceptance if slot deletion fails
+        // The appointment is already confirmed, which is the critical action
+      }
     }
 
     // Fetch student info separately
@@ -285,6 +319,29 @@ export const declineAppointmentRequest = async (req, res) => {
   try {
     const { appointment_id } = req.params;
 
+    // First check if appointment exists and is pending
+    const { data: existing, error: checkError } = await supabase
+      .from('appointments')
+      .select('id, status, counsellor_id, college_id')
+      .eq('id', appointment_id)
+      .single();
+
+    if (checkError || !existing) {
+      return notFoundResponse(res, 'Appointment');
+    }
+
+    if (existing.status !== 'pending') {
+      return errorResponse(res, `Appointment is not pending (status: ${existing.status}). Cannot decline.`, 400);
+    }
+
+    if (existing.counsellor_id !== req.user.user_id) {
+      return errorResponse(res, 'You are not the counsellor for this appointment', 403);
+    }
+
+    if (existing.college_id !== req.tenant) {
+      return errorResponse(res, 'Appointment does not belong to your college', 403);
+    }
+
     const { data, error } = await supabase
       .from('appointments')
       .update({ 
@@ -292,32 +349,12 @@ export const declineAppointmentRequest = async (req, res) => {
         updated_at: new Date().toISOString()
       })
       .eq('id', appointment_id)
-      .eq('counsellor_id', req.user.user_id)
-      .eq('college_id', req.tenant)
-      .eq('status', 'pending') // Only decline if currently pending
-      .select('id, date, start_time, status, student_id, notes')
+      .select('id, date, start_time, status, student_id')
       .single();
 
     if (error) {
       const formattedError = formatSupabaseError(error);
       return errorResponse(res, formattedError.message, 400);
-    }
-
-    if (!data) {
-      return notFoundResponse(res, 'Appointment request');
-    }
-
-    // Fetch student info separately
-    if (data.student_id) {
-      const { data: student } = await supabase
-        .from('profiles')
-        .select('id, name, email')
-        .eq('id', data.student_id)
-        .single();
-      
-      if (student) {
-        data.student = student;
-      }
     }
 
     return successResponse(res, data, 'Appointment request declined successfully');
@@ -376,9 +413,9 @@ export const addAvailability = async (req, res) => {
 };
 
 /**
- * Get availability slots for the counsellor
+ * Get availability slots for counsellor
  * Route: GET /api/counsellor/manage-availability
- * Optional query: date (YYYY-MM-DD) to filter by specific date
+ * Optional query: date (YYYY-MM-DD)
  */
 export const getAvailability = async (req, res) => {
   try {
@@ -389,22 +426,21 @@ export const getAvailability = async (req, res) => {
       .select('id, date, start_time, is_active, created_at')
       .eq('counsellor_id', req.user.user_id)
       .eq('college_id', req.tenant)
-      .eq('is_active', true);
+      .order('date', { ascending: true })
+      .order('start_time', { ascending: true });
 
     if (date) {
       query = query.eq('date', date);
     }
 
-    const { data, error } = await query
-      .order('date', { ascending: true })
-      .order('start_time', { ascending: true });
+    const { data, error } = await query;
 
     if (error) {
       const formattedError = formatSupabaseError(error);
       return errorResponse(res, formattedError.message, 400);
     }
 
-    return successResponse(res, data || [], 'Availability retrieved successfully');
+    return successResponse(res, data, 'Availability retrieved successfully');
   } catch (error) {
     console.error('Get availability error:', error);
     return errorResponse(res, 'Failed to get availability', 500);
@@ -412,36 +448,27 @@ export const getAvailability = async (req, res) => {
 };
 
 /**
- * Delete availability slot
+ * Delete an availability slot
  * Route: DELETE /api/counsellor/manage-availability/:availability_id
  */
 export const deleteAvailability = async (req, res) => {
   try {
     const { availability_id } = req.params;
 
-    // Soft delete by setting is_active to false
-    const { data, error } = await supabase
+    // Ensure the slot belongs to the counsellor and college
+    const { error } = await supabase
       .from('counsellor_availability')
-      .update({ 
-        is_active: false,
-        updated_at: new Date().toISOString()
-      })
+      .delete()
       .eq('id', availability_id)
       .eq('counsellor_id', req.user.user_id)
-      .eq('college_id', req.tenant)
-      .select()
-      .single();
+      .eq('college_id', req.tenant);
 
     if (error) {
       const formattedError = formatSupabaseError(error);
       return errorResponse(res, formattedError.message, 400);
     }
 
-    if (!data) {
-      return notFoundResponse(res, 'Availability slot');
-    }
-
-    return successResponse(res, data, 'Availability deleted successfully');
+    return successResponse(res, null, 'Availability deleted successfully');
   } catch (error) {
     console.error('Delete availability error:', error);
     return errorResponse(res, 'Failed to delete availability', 500);
