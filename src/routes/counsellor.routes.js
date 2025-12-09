@@ -89,6 +89,10 @@ router.post('/manage-availability',
   addAvailability
 );
 
+router.get('/manage-availability',
+  getAvailability
+);
+
 router.delete('/manage-availability/:availability_id',
   validateUUID('availability_id'),
   deleteAvailability
