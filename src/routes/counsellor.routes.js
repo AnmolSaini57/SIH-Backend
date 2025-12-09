@@ -31,6 +31,10 @@ import {
   getConversationByIdController,
   deleteConversationController
 } from '../controllers/messaging.controller.js';
+import {
+  getAnnouncementsForUser,
+  markAnnouncementSeen
+} from '../controllers/announcement.controller.js';
 import { 
   validate, 
   validatePagination,
@@ -55,6 +59,14 @@ router.get('/profile', getProfile);
 router.put('/profile', 
   validate(userSchemas.updateProfile), 
   updateProfile
+);
+
+//////////////// ANNOUNCEMENTS /////////////////////////////
+router.get('/announcements', getAnnouncementsForUser);
+
+router.post('/announcements/:announcement_id/seen',
+  validateUUID('announcement_id'),
+  markAnnouncementSeen
 );
 
 // Dashboard

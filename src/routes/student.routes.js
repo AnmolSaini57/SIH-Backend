@@ -19,6 +19,10 @@ import {
   getAvailableAssessments
 } from '../controllers/assessment.controller.js';
 import {
+  getAnnouncementsForUser,
+  markAnnouncementSeen
+} from '../controllers/announcement.controller.js';
+import {
   createConversationController,
   getStudentConversationsController,
   getConversationMessagesController,
@@ -51,6 +55,14 @@ router.get('/profile', getProfile);
 router.put('/profile', 
   validate(userSchemas.updateProfile), 
   updateProfile
+);
+
+//////////////////////// ANNOUNCEMENTS /////////////////////////////
+router.get('/announcements', getAnnouncementsForUser);
+
+router.post('/announcements/:announcement_id/seen',
+  validateUUID('announcement_id'),
+  markAnnouncementSeen
 );
 
 //////////////////////// APPPOINTMENT MANAGEMENT /////////////////////////////
