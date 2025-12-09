@@ -31,6 +31,9 @@ import {
   getConversationByIdController,
   deleteConversationController
 } from '../controllers/messaging.controller.js';
+import {
+  getAssessmentAnalytics
+} from '../controllers/admin.controller.js';
 import { 
   validate, 
   validatePagination,
@@ -59,6 +62,9 @@ router.put('/profile',
 
 // Dashboard
 router.get('/dashboard/stats', getDashboardStats);
+
+// Analytics
+router.get('/analytics/assessments', getAssessmentAnalytics);
 
 
 /////////////////// APPOINTMENT MANAGEMENT ///////////////////////////////

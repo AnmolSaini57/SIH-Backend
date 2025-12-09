@@ -1019,3 +1019,178 @@ export const createRealtimeSession = async (req, res) => {
     );
   }
 };
+
+/**
+ * Get Assessment Analytics
+ * GET /api/admin/analytics/assessments
+ * Returns aggregated analytics data from student assessments (latest per student)
+ */
+export const getAssessmentAnalytics = async (req, res) => {
+  try {
+    const collegeId = req.tenant;
+
+    // Get all assessments for the college, grouped by student (taking latest one)
+    const { data: assessments, error: assessmentsError } = await supabase
+      .from('assessments')
+      .select('student_id, form_type, score, severity_level, responses, created_at')
+      .eq('college_id', collegeId)
+      .order('created_at', { ascending: false });
+
+    if (assessmentsError) {
+      console.error('Error fetching assessments:', assessmentsError);
+      return errorResponse(res, 'Failed to fetch assessment data', 500);
+    }
+
+    // Group by student and keep only the latest assessment per student
+    const latestAssessmentsByStudent = {};
+    assessments.forEach(assessment => {
+      if (!latestAssessmentsByStudent[assessment.student_id]) {
+        latestAssessmentsByStudent[assessment.student_id] = assessment;
+      }
+    });
+
+    const latestAssessments = Object.values(latestAssessmentsByStudent);
+
+    // Calculate analytics
+    const analytics = {
+      // Stress Levels Over Time (PHQ-9 or PSS-10)
+      stressLevels: calculateStressLevelsOverTime(assessments),
+      
+      // Anxiety/Depression Distribution (GAD-7 or PHQ-9)
+      anxietyDepressionDistribution: calculateSeverityDistribution(latestAssessments),
+      
+      // Risk Alert Distribution
+      riskAlertDistribution: calculateRiskDistribution(latestAssessments),
+      
+      // Total stats
+      totalStudentsAssessed: latestAssessments.length,
+      totalAssessments: assessments.length,
+      
+      // Assessment type breakdown
+      assessmentTypeBreakdown: calculateAssessmentTypeBreakdown(latestAssessments)
+    };
+
+    return successResponse(res, analytics, 'Assessment analytics retrieved successfully');
+  } catch (error) {
+    console.error('Get assessment analytics error:', error);
+    return errorResponse(res, 'Failed to get assessment analytics', 500);
+  }
+};
+
+// Helper function to calculate stress levels over time (weekly aggregates)
+function calculateStressLevelsOverTime(assessments) {
+  // Group assessments by week
+  const now = new Date();
+  const weeks = [];
+  const weekLabels = [];
+  
+  // Get last 5 weeks
+  for (let i = 4; i >= 0; i--) {
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - (i * 7));
+    weekStart.setHours(0, 0, 0, 0);
+    
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 7);
+    
+    weeks.push({ start: weekStart, end: weekEnd });
+    weekLabels.push(`Week ${5 - i}`);
+  }
+  
+  // Calculate average score per week for stress-related assessments
+  const weeklyScores = weeks.map(week => {
+    const weekAssessments = assessments.filter(a => {
+      const aDate = new Date(a.created_at);
+      return aDate >= week.start && aDate < week.end && 
+             (a.form_type === 'PSS-10' || a.form_type === 'PHQ-9' || a.form_type === 'GAD-7');
+    });
+    
+    if (weekAssessments.length === 0) return 0;
+    
+    const avgScore = weekAssessments.reduce((sum, a) => sum + a.score, 0) / weekAssessments.length;
+    // Normalize to 0-10 scale
+    return parseFloat((avgScore / 27 * 10).toFixed(1)); // Assuming max score of ~27
+  });
+  
+  return {
+    labels: weekLabels,
+    values: weeklyScores.map(s => s || 5.0), // Default to 5.0 if no data
+    average: weeklyScores.filter(s => s > 0).length > 0 
+      ? parseFloat((weeklyScores.reduce((a, b) => a + b, 0) / weeklyScores.filter(s => s > 0).length).toFixed(1))
+      : 5.0
+  };
+}
+
+// Helper function to calculate severity distribution
+function calculateSeverityDistribution(latestAssessments) {
+  const distribution = {
+    normal: 0,
+    mild: 0,
+    moderate: 0,
+    severe: 0
+  };
+  
+  latestAssessments.forEach(assessment => {
+    const severity = assessment.severity_level?.toLowerCase() || 'normal';
+    if (distribution.hasOwnProperty(severity)) {
+      distribution[severity]++;
+    } else {
+      distribution.normal++;
+    }
+  });
+  
+  const total = latestAssessments.length || 1;
+  
+  return {
+    labels: ['Normal', 'Mild', 'Moderate', 'Severe'],
+    values: [distribution.normal, distribution.mild, distribution.moderate, distribution.severe],
+    percentages: [
+      parseFloat((distribution.normal / total * 100).toFixed(1)),
+      parseFloat((distribution.mild / total * 100).toFixed(1)),
+      parseFloat((distribution.moderate / total * 100).toFixed(1)),
+      parseFloat((distribution.severe / total * 100).toFixed(1))
+    ]
+  };
+}
+
+// Helper function to calculate risk distribution
+function calculateRiskDistribution(latestAssessments) {
+  const riskLevels = {
+    low: 0,
+    medium: 0,
+    high: 0
+  };
+  
+  latestAssessments.forEach(assessment => {
+    const severity = assessment.severity_level?.toLowerCase() || 'normal';
+    
+    if (severity === 'normal' || severity === 'minimal') {
+      riskLevels.low++;
+    } else if (severity === 'mild' || severity === 'moderate') {
+      riskLevels.medium++;
+    } else {
+      riskLevels.high++;
+    }
+  });
+  
+  return {
+    labels: ['Low Risk (Green)', 'Medium Risk (Yellow)', 'High Risk (Red)'],
+    values: [riskLevels.low, riskLevels.medium, riskLevels.high],
+    colors: ['green', 'yellow', 'red']
+  };
+}
+
+// Helper function to calculate assessment type breakdown
+function calculateAssessmentTypeBreakdown(latestAssessments) {
+  const breakdown = {};
+  
+  latestAssessments.forEach(assessment => {
+    const type = assessment.form_type;
+    if (!breakdown[type]) {
+      breakdown[type] = 0;
+    }
+    breakdown[type]++;
+  });
+  
+  return breakdown;
+}
